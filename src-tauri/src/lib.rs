@@ -1,6 +1,7 @@
 mod clip_bus;
 mod clip_writer;
 mod commands;
+mod first_run;
 mod file_store;
 mod store;
 use tauri::{AppHandle, Emitter, Manager, WindowEvent};
@@ -93,6 +94,7 @@ pub fn run() {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
             app.manage(store::Store::open(&data_dir.join("history.db"))?);
+            first_run::run_once(app.handle(), &data_dir);
 
             // PookieClip's own copies of copied files live next to the history
             let files_dir = data_dir.join("files");

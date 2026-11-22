@@ -32,7 +32,17 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "deb",
+      "rpm"
+    ],
+    "publisher": "Grace Peter Mutiibwa",
+    "copyright": "Copyright (c) 2026 Grace Peter Mutiibwa",
+    "license": "MIT",
+    "homepage": "https://github.com/GracePeterMutiibwa/pookieclip",
+    "category": "Utility",
+    "shortDescription": "A private clipboard history for Linux",
+    "longDescription": "PookieClip keeps your clipboard history on your own machine: text, links, colors and copied files, with its own saved copies of files so you can paste them again later.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -40,6 +50,27 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "linux": {
+      "deb": {
+        "section": "utils",
+        "files": {
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/extension.js": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/extension.js",
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/metadata.json": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/metadata.json",
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/icons/pookieclip-symbolic.svg": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/icons/pookieclip-symbolic.svg",
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/schemas/org.gnome.shell.extensions.pookieclip.gschema.xml": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/schemas/org.gnome.shell.extensions.pookieclip.gschema.xml",
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/schemas/gschemas.compiled": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/schemas/gschemas.compiled"
+        }
+      },
+      "rpm": {
+        "files": {
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/extension.js": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/extension.js",
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/metadata.json": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/metadata.json",
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/icons/pookieclip-symbolic.svg": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/icons/pookieclip-symbolic.svg",
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/schemas/org.gnome.shell.extensions.pookieclip.gschema.xml": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/schemas/org.gnome.shell.extensions.pookieclip.gschema.xml",
+          "/usr/share/gnome-shell/extensions/pookieclip@gracepetermutiibwa.github.io/schemas/gschemas.compiled": "../gnome-extension/pookieclip@gracepetermutiibwa.github.io/schemas/gschemas.compiled"
+        }
+      }
+    },
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }

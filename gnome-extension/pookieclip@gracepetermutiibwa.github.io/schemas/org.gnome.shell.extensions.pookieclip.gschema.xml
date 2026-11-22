@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.pookieclip" path="/org/gnome/shell/extensions/pookieclip/">
+    <key name="toggle-panel" type="as">
+      <default><![CDATA[['<Control><Alt>h']]]></default>
+      <summary>Open or hide the PookieClip panel</summary>
+    </key>
+  </schema>
+</schemalist>

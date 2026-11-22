@@ -4,12 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PookieClip</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="fonts/fonts.css" />
     <style>
       :root {
         --surface: linear-gradient(
@@ -635,7 +630,9 @@
         font-size: 0.75rem;
         font-weight: 500;
         cursor: pointer;
-        transition: background 0.16s var(--ease), color 0.16s var(--ease);
+        transition:
+          background 0.16s var(--ease),
+          color 0.16s var(--ease);
       }
 
       .textBtn:hover {
@@ -680,7 +677,9 @@
         height: 0.875rem;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.85);
-        transition: transform 0.24s var(--ease), background 0.2s var(--ease);
+        transition:
+          transform 0.24s var(--ease),
+          background 0.2s var(--ease);
       }
 
       .switch[aria-checked="true"] {
@@ -767,7 +766,9 @@
         font-size: 0.9375rem;
         cursor: pointer;
         opacity: 0;
-        transition: opacity 0.16s var(--ease), background 0.16s var(--ease);
+        transition:
+          opacity 0.16s var(--ease),
+          background 0.16s var(--ease);
       }
 
       .treeRow:hover .treeCopy,
@@ -794,7 +795,9 @@
         border: 1.5px solid rgba(255, 255, 255, 0.35);
         color: #1c1c1f;
         font-size: 0.75rem;
-        transition: background 0.16s var(--ease), border-color 0.16s var(--ease);
+        transition:
+          background 0.16s var(--ease),
+          border-color 0.16s var(--ease);
       }
 
       .isSelecting .checkBox {
@@ -1510,13 +1513,28 @@
         </span>
         <span class="footerEnd">
           <span class="footerActions">
-            <button class="aboutBtn" id="clearBtn" type="button" aria-label="Clear history">
+            <button
+              class="aboutBtn"
+              id="clearBtn"
+              type="button"
+              aria-label="Clear history"
+            >
               <span data-icon="trash"></span><span>Clear</span>
             </button>
-            <button class="aboutBtn" id="aboutBtn" type="button" aria-label="About">
+            <button
+              class="aboutBtn"
+              id="aboutBtn"
+              type="button"
+              aria-label="About"
+            >
               <span data-icon="info"></span><span>About</span>
             </button>
-            <button class="aboutBtn" id="quitBtn" type="button" aria-label="Quit PookieClip">
+            <button
+              class="aboutBtn"
+              id="quitBtn"
+              type="button"
+              aria-label="Quit PookieClip"
+            >
               <span data-icon="quit"></span><span>Quit</span>
             </button>
           </span>
@@ -1648,9 +1666,10 @@
             <p class="sectionLabel">Made by</p>
             <h2 class="makerName">Grace Peter Mutiibwa</h2>
             <p class="makerBio">
-              Software engineer and educator from Mbarara, Uganda. Founder of
-              Clearnique and creator of open source developer tools like
-              PookieDB, Moldo and DiagramDSL.
+              Software engineer and educator from, Uganda. Founder of Clearnique
+              and creator of open source developer tools like PookieDB (On PyPI,
+              NPM & Web Version), Moldo Visual Programming Language, Pookie
+              Storage (Django)
             </p>
             <div class="linkList" id="makerLinks"></div>
             <p class="creditNote">
@@ -2408,9 +2427,17 @@
             const open = node.isDir && state.tree.expanded.has(node.path);
             const nodeState = treeCheckState(node);
             const checkClass =
-              nodeState === "all" ? "isChecked" : nodeState === "some" ? "isPartial" : "";
+              nodeState === "all"
+                ? "isChecked"
+                : nodeState === "some"
+                  ? "isPartial"
+                  : "";
             const ariaChecked =
-              nodeState === "all" ? "true" : nodeState === "some" ? "mixed" : "false";
+              nodeState === "all"
+                ? "true"
+                : nodeState === "some"
+                  ? "mixed"
+                  : "false";
             const count = node.isDir ? treeFileCount(node.children) : 0;
             const meta = node.isDir
               ? `${count} ${count === 1 ? "file" : "files"}`
@@ -2467,10 +2494,15 @@
       }
 
       function fileActionsHtml(item) {
-        if (state.tree.id === item.id && state.tree.selecting && state.tree.data) {
+        if (
+          state.tree.id === item.id &&
+          state.tree.selecting &&
+          state.tree.data
+        ) {
           const count = treeSelection(item).length;
           const allChecked =
-            treeCheckState({ isDir: true, children: state.tree.data.roots }) === "all";
+            treeCheckState({ isDir: true, children: state.tree.data.roots }) ===
+            "all";
           return `<button class="btn btnPrimary" type="button" data-tree-action="copySelected" ${count ? "" : "disabled"}>${iconSvg("copy")}<span>${count ? `Copy ${count} selected` : "Copy selected"}</span></button>
         <button class="btn btnSecondary" type="button" data-tree-action="selectAll">${allChecked ? "Clear selection" : "Select all"}</button>`;
         }
@@ -2534,7 +2566,8 @@
         if (state.tree.selecting && !onChevron) {
           toggleTreeCheck(node);
         } else if (node.isDir) {
-          if (state.tree.expanded.has(node.path)) state.tree.expanded.delete(node.path);
+          if (state.tree.expanded.has(node.path))
+            state.tree.expanded.delete(node.path);
           else state.tree.expanded.add(node.path);
         }
         render();
@@ -2646,7 +2679,11 @@
           return;
         }
 
-        if (item.type === "file" && state.tree.id === item.id && state.tree.selecting) {
+        if (
+          item.type === "file" &&
+          state.tree.id === item.id &&
+          state.tree.selecting
+        ) {
           const selection = treeSelection(item);
           if (selection.length) copyPaths(selection.map((node) => node.path));
           return;
@@ -2853,7 +2890,9 @@
       clearBtn.addEventListener("click", openConfirm);
       document
         .getElementById("quitBtn")
-        .addEventListener("click", () => window.__TAURI__.core.invoke("quit_app"));
+        .addEventListener("click", () =>
+          window.__TAURI__.core.invoke("quit_app"),
+        );
       confirmCancel.addEventListener("click", closeConfirm);
       confirmClear.addEventListener("click", clearHistory);
 

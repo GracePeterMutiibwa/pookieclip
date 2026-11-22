@@ -47,6 +47,11 @@ export default class PookieClipExtension extends Extension {
         this._indicator = new PookieClipIndicator(this);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
 
+        // Ctrl+Alt+H by default, changeable through the toggle-panel setting
+        this._settings = this.getSettings();
+        Main.wm.addKeybinding('toggle-panel', this._settings, Meta.KeyBindingFlags.NONE,
+            Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW, () => this._togglePanel());
+
         this._selection = global.display.get_selection();
         this._clipboard = St.Clipboard.get_default();
         this._ownerChangedId = this._selection.connect('owner-changed', (_selection, selectionType) => {
@@ -56,6 +61,8 @@ export default class PookieClipExtension extends Extension {
     }
 
     disable() {
+        Main.wm.removeKeybinding('toggle-panel');
+        this._settings = null;
         this._indicator.destroy();
         this._indicator = null;
         this._selection.disconnect(this._ownerChangedId);
