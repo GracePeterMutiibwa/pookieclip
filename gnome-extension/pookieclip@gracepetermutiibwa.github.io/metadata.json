@@ -1,0 +1,14 @@
+{
+    "uuid": "pookieclip@gracepetermutiibwa.github.io",
+    "name": "PookieClip",
+    "description": "Sends clipboard changes to the PookieClip app so it can keep your clipboard history on GNOME.",
+    "shell-version": [
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50"
+    ],
+    "url": "https://github.com/GracePeterMutiibwa/pookieclip"
+}

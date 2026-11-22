@@ -1,0 +1,2548 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PookieClip</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --surface: linear-gradient(
+          180deg,
+          #252529 0%,
+          #1c1c1f 38%,
+          #17171a 100%
+        );
+        /* Grain tile built from the same turbulence settings as grain-filter */
+        --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23g)' opacity='0.12'/%3E%3C/svg%3E");
+        --glassBorder: rgba(255, 255, 255, 0.14);
+        --divider: rgba(255, 255, 255, 0.08);
+        --textPrimary: rgba(255, 255, 255, 0.95);
+        --textSecondary: rgba(255, 255, 255, 0.66);
+        --textTertiary: rgba(255, 255, 255, 0.44);
+        --fill1: rgba(255, 255, 255, 0.06);
+        --fill2: rgba(255, 255, 255, 0.1);
+        --fill3: rgba(255, 255, 255, 0.16);
+        --solidLight: rgba(255, 255, 255, 0.92);
+        --ease: cubic-bezier(0.32, 0.72, 0, 1);
+        --fontSans: "IBM Plex Sans", sans-serif;
+        --fontMono: "IBM Plex Mono", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      body {
+        font-family: var(--fontSans);
+        color: var(--textPrimary);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .icon {
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
+        display: block;
+      }
+
+      kbd {
+        font-family: var(--fontSans);
+        font-size: 0.6875rem;
+        font-weight: 500;
+        line-height: 1;
+        padding: 0.1875rem 0.375rem;
+        border-radius: 0.3125rem;
+        background: var(--fill2);
+        border: 1px solid var(--divider);
+        color: var(--textSecondary);
+      }
+
+      mark {
+        background: rgba(255, 255, 255, 0.24);
+        color: inherit;
+        border-radius: 0.1875rem;
+        padding: 0 0.0625rem;
+      }
+
+      /* The panel fills the whole transparent window */
+      .clipPanel {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        border-radius: 1.25rem;
+        background: var(--grain), var(--surface);
+        border: 1px solid var(--glassBorder);
+        overflow: hidden;
+      }
+
+      .panelHeader {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem 0.75rem;
+      }
+
+      .headerIcon {
+        font-size: 1.25rem;
+        color: var(--textSecondary);
+      }
+
+      .searchInput {
+        flex: 1;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        outline: none;
+        font-family: var(--fontSans);
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--textPrimary);
+        caret-color: var(--textPrimary);
+      }
+
+      .searchInput::placeholder {
+        color: var(--textTertiary);
+      }
+
+      .headerClose {
+        display: none;
+        height: 2rem;
+        padding: 0 0.875rem;
+        border: none;
+        border-radius: 999px;
+        background: var(--fill2);
+        color: var(--textPrimary);
+        font-family: var(--fontSans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .chipRow {
+        display: flex;
+        gap: 0.375rem;
+        padding: 0 1.25rem 0.875rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .chipRow::-webkit-scrollbar {
+        display: none;
+      }
+
+      .chip {
+        flex-shrink: 0;
+        height: 2rem;
+        padding: 0 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4375rem;
+        border: none;
+        border-radius: 999px;
+        background: var(--fill1);
+        color: var(--textSecondary);
+        font-family: var(--fontSans);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.2s var(--ease),
+          color 0.2s var(--ease);
+      }
+
+      .chip:hover {
+        background: var(--fill2);
+      }
+
+      .chip .icon {
+        font-size: 0.875rem;
+      }
+
+      .chipCount {
+        color: var(--textTertiary);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .chip.isActive {
+        background: var(--solidLight);
+        color: #111;
+      }
+
+      .chip.isActive .chipCount {
+        color: rgba(0, 0, 0, 0.5);
+      }
+
+      .chipSwatch {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 0.1875rem;
+        background: conic-gradient(
+          #e8e4dc 0 25%,
+          #4f7cac 0 50%,
+          #1e1e22 0 75%,
+          #c8a97e 0
+        );
+      }
+
+      .panelBody {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 22rem minmax(0, 1fr);
+        border-top: 1px solid var(--divider);
+      }
+
+      .itemList {
+        overflow-y: auto;
+        padding: 0.375rem 0.5rem 0.75rem;
+        border-right: 1px solid var(--divider);
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      }
+
+      .groupLabel {
+        padding: 0.875rem 0.625rem 0.375rem;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--textTertiary);
+      }
+
+      .itemRow {
+        display: grid;
+        grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.5rem 0.5rem 0.625rem;
+        border-radius: 0.625rem;
+        cursor: pointer;
+        transition: background 0.16s var(--ease);
+      }
+
+      .itemRow:hover {
+        background: var(--fill1);
+      }
+
+      .itemRow.isSelected {
+        background: var(--fill3);
+      }
+
+      .rowTile {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.5rem;
+        background: var(--fill2);
+        display: grid;
+        place-items: center;
+        font-size: 1.125rem;
+        color: var(--textSecondary);
+        background-size: cover;
+        background-position: center;
+      }
+
+      .rowTile.isSwatch,
+      .rowTile.isImage {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .rowMain {
+        min-width: 0;
+      }
+
+      .rowTitle {
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.35;
+        color: var(--textPrimary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .rowTitle.isClamp {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+      }
+
+      .rowTitle.isMono {
+        font-family: var(--fontMono);
+        font-size: 0.8125rem;
+        font-weight: 400;
+      }
+
+      .rowMeta {
+        margin-top: 0.125rem;
+        font-size: 0.75rem;
+        color: var(--textTertiary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .itemRow.isMissing .rowTitle {
+        color: var(--textTertiary);
+        text-decoration: line-through;
+        text-decoration-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .rowActions {
+        display: flex;
+        gap: 0.125rem;
+        opacity: 0;
+        transition: opacity 0.16s var(--ease);
+      }
+
+      .itemRow:hover .rowActions,
+      .itemRow.isSelected .rowActions {
+        opacity: 1;
+      }
+
+      .iconBtn {
+        width: 1.75rem;
+        height: 1.75rem;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 0.4375rem;
+        background: transparent;
+        color: var(--textSecondary);
+        font-size: 1rem;
+        cursor: pointer;
+        transition:
+          background 0.16s var(--ease),
+          color 0.16s var(--ease);
+      }
+
+      .iconBtn:hover {
+        background: var(--fill2);
+        color: var(--textPrimary);
+      }
+
+      .isPinned .pinIcon path,
+      .btn.isPinned .pinIcon path {
+        fill: currentColor;
+      }
+
+      .emptyState {
+        height: 100%;
+        min-height: 12rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+        color: var(--textTertiary);
+        font-size: 0.875rem;
+      }
+
+      .emptyState .icon {
+        font-size: 1.75rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .emptyTitle {
+        color: var(--textSecondary);
+        font-weight: 500;
+      }
+
+      .previewPane {
+        overflow-y: auto;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      }
+
+      .previewHead {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .previewType {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--textTertiary);
+      }
+
+      .previewSource {
+        margin-top: 0.25rem;
+        font-size: 0.8125rem;
+        color: var(--textSecondary);
+      }
+
+      .previewClose {
+        display: none;
+      }
+
+      .previewText {
+        margin: 0;
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .previewStats {
+        font-size: 0.75rem;
+        color: var(--textTertiary);
+      }
+
+      .linkCard {
+        padding: 1rem 1.125rem;
+        border-radius: 0.875rem;
+        background: var(--fill1);
+        border: 1px solid var(--divider);
+      }
+
+      .linkHost {
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+
+      .linkTitle {
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+        color: var(--textSecondary);
+      }
+
+      .linkUrl {
+        margin-top: 0.75rem;
+        font-family: var(--fontMono);
+        font-size: 0.8125rem;
+        color: var(--textTertiary);
+        word-break: break-all;
+      }
+
+      .codeBlock {
+        margin: 0;
+        padding: 1rem 1.125rem;
+        border-radius: 0.75rem;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--divider);
+        font-family: var(--fontMono);
+        font-size: 0.8125rem;
+        line-height: 1.65;
+        color: rgba(255, 255, 255, 0.78);
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      .tokKeyword {
+        color: #fff;
+        font-weight: 500;
+      }
+      .tokString {
+        color: rgba(255, 255, 255, 0.62);
+        font-style: italic;
+      }
+      .tokNumber {
+        color: #fff;
+      }
+      .tokComment {
+        color: rgba(255, 255, 255, 0.38);
+      }
+
+      .swatchLarge {
+        height: 8rem;
+        border-radius: 0.875rem;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .valueList {
+        display: flex;
+        flex-direction: column;
+        border-radius: 0.75rem;
+        background: var(--fill1);
+        border: 1px solid var(--divider);
+        overflow: hidden;
+      }
+
+      .valueRow {
+        display: grid;
+        grid-template-columns: 3rem minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.375rem 0.5rem 0.375rem 1rem;
+      }
+
+      .valueRow + .valueRow {
+        border-top: 1px solid var(--divider);
+      }
+
+      .valueLabel {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--textTertiary);
+      }
+
+      .valueText {
+        font-family: var(--fontMono);
+        font-size: 0.8125rem;
+      }
+
+      .imageFrame {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background-size: cover;
+        background-position: center;
+      }
+
+      .fileHead {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .fileTile {
+        width: 3.5rem;
+        height: 3.5rem;
+        flex-shrink: 0;
+        border-radius: 0.875rem;
+        background: var(--fill2);
+        display: grid;
+        place-items: center;
+        font-size: 1.75rem;
+        color: var(--textSecondary);
+      }
+
+      .fileName {
+        font-size: 1.0625rem;
+        font-weight: 600;
+        word-break: break-word;
+      }
+
+      .filePath {
+        margin-top: 0.25rem;
+        font-family: var(--fontMono);
+        font-size: 0.8125rem;
+        color: var(--textTertiary);
+        word-break: break-all;
+      }
+
+      .noticeRow {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.625rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        background: var(--fill1);
+        border: 1px solid var(--divider);
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        color: var(--textSecondary);
+      }
+
+      .noticeRow .icon {
+        font-size: 1.125rem;
+        margin-top: 0.0625rem;
+      }
+
+      .previewActions {
+        margin-top: auto;
+        padding-top: 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .btn {
+        height: 2.25rem;
+        padding: 0 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        border-radius: 0.625rem;
+        font-family: var(--fontSans);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.16s var(--ease),
+          opacity 0.16s var(--ease);
+      }
+
+      .btn .icon {
+        font-size: 1rem;
+      }
+
+      .btnPrimary {
+        background: var(--solidLight);
+        color: #111;
+      }
+
+      .btnPrimary:hover {
+        background: #fff;
+      }
+
+      .btnPrimary kbd {
+        background: rgba(0, 0, 0, 0.07);
+        border-color: rgba(0, 0, 0, 0.06);
+        color: rgba(0, 0, 0, 0.55);
+      }
+
+      .btnSecondary {
+        background: var(--fill2);
+        color: var(--textPrimary);
+      }
+
+      .btnSecondary:hover {
+        background: var(--fill3);
+      }
+
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .previewEmpty {
+        margin: auto;
+        font-size: 0.875rem;
+        color: var(--textTertiary);
+      }
+
+      .panelFooter {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.5rem 0.75rem 0.5rem 1.25rem;
+        border-top: 1px solid var(--divider);
+        font-size: 0.75rem;
+        color: var(--textTertiary);
+      }
+
+      .privacyNote {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+      }
+
+      .privacyNote .icon {
+        font-size: 0.875rem;
+      }
+
+      .privacyText {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .footerEnd {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .keyHints {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        white-space: nowrap;
+      }
+
+      .keyHints > span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .aboutBtn {
+        height: 1.75rem;
+        padding: 0 0.625rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        border: none;
+        border-radius: 0.4375rem;
+        background: transparent;
+        color: var(--textSecondary);
+        font-family: var(--fontSans);
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.16s var(--ease),
+          color 0.16s var(--ease);
+      }
+
+      .aboutBtn .icon {
+        font-size: 0.9375rem;
+      }
+
+      .aboutBtn:hover {
+        background: var(--fill2);
+        color: var(--textPrimary);
+      }
+
+      .footerActions {
+        display: flex;
+        align-items: center;
+        gap: 0.125rem;
+      }
+
+      /* Confirmation dialog for clearing history */
+      .confirmLayer {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.2s var(--ease),
+          visibility 0s linear 0.2s;
+        z-index: 6;
+      }
+
+      .clipPanel.showConfirm .confirmLayer {
+        opacity: 1;
+        visibility: visible;
+        transition:
+          opacity 0.2s var(--ease),
+          visibility 0s linear 0s;
+      }
+
+      .confirmCard {
+        width: min(24rem, 100%);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        background: var(--grain), #232327;
+        border: 1px solid var(--glassBorder);
+        transform: scale(0.96);
+        transition: transform 0.28s var(--ease);
+      }
+
+      .clipPanel.showConfirm .confirmCard {
+        transform: scale(1);
+      }
+
+      .confirmTitle {
+        margin: 0;
+        font-size: 1.0625rem;
+        font-weight: 600;
+      }
+
+      .confirmText {
+        margin: 0.5rem 0 1.5rem;
+        font-size: 0.875rem;
+        line-height: 1.55;
+        color: var(--textSecondary);
+      }
+
+      .confirmActions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      /* About view slides over the whole panel */
+      .aboutView {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--grain), #161619;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(0.75rem);
+        transition:
+          opacity 0.24s var(--ease),
+          transform 0.32s var(--ease),
+          visibility 0s linear 0.32s;
+        z-index: 4;
+      }
+
+      .clipPanel.showAbout .aboutView {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        transition:
+          opacity 0.24s var(--ease),
+          transform 0.32s var(--ease),
+          visibility 0s linear 0s;
+      }
+
+      .aboutBar {
+        display: flex;
+        align-items: center;
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid var(--divider);
+      }
+
+      .backBtn {
+        height: 2rem;
+        padding: 0 0.75rem 0 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        border: none;
+        border-radius: 0.5rem;
+        background: transparent;
+        color: var(--textSecondary);
+        font-family: var(--fontSans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .backBtn .icon {
+        font-size: 1.125rem;
+      }
+
+      .backBtn:hover {
+        background: var(--fill2);
+        color: var(--textPrimary);
+      }
+
+      .aboutContent {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: 2.5rem;
+        padding: 2rem 2.5rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      }
+
+      .appIdentity {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .appIcon svg {
+        width: 4.5rem;
+        height: 4.5rem;
+        display: block;
+      }
+
+      .appName {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--textPrimary);
+      }
+
+      .appTagline {
+        margin: 0.25rem 0 0;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        color: var(--textSecondary);
+      }
+
+      .metaList {
+        display: flex;
+        flex-direction: column;
+        border-radius: 0.75rem;
+        background: var(--fill1);
+        border: 1px solid var(--divider);
+        overflow: hidden;
+      }
+
+      .metaRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.625rem 1rem;
+        font-size: 0.8125rem;
+      }
+
+      .metaRow + .metaRow {
+        border-top: 1px solid var(--divider);
+      }
+
+      .metaLabel {
+        color: var(--textTertiary);
+      }
+
+      .sectionLabel {
+        margin: 0 0 0.75rem;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--textTertiary);
+      }
+
+      .makerName {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+
+      .makerBio {
+        margin: 0.375rem 0 1.25rem;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--textSecondary);
+      }
+
+      .linkList {
+        display: flex;
+        flex-direction: column;
+        border-radius: 0.75rem;
+        background: var(--fill1);
+        border: 1px solid var(--divider);
+        overflow: hidden;
+      }
+
+      .linkRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: 100%;
+        padding: 0.625rem 1rem;
+        border: none;
+        background: transparent;
+        color: var(--textPrimary);
+        font-family: var(--fontSans);
+        font-size: 0.8125rem;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.16s var(--ease);
+      }
+
+      .linkRow + .linkRow {
+        border-top: 1px solid var(--divider);
+      }
+
+      .linkRow:hover {
+        background: var(--fill1);
+      }
+
+      .linkRowLabel {
+        font-weight: 500;
+      }
+
+      .linkRowHost {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+        color: var(--textTertiary);
+      }
+
+      .linkRowHost span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .creditNote {
+        margin: 1.25rem 0 0;
+        font-size: 0.75rem;
+        line-height: 1.5;
+        color: var(--textTertiary);
+      }
+
+      .toast {
+        position: absolute;
+        left: 50%;
+        bottom: 3.75rem;
+        transform: translate(-50%, 0.5rem);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        background: var(--solidLight);
+        color: #111;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.2s var(--ease),
+          transform 0.28s var(--ease);
+        z-index: 5;
+      }
+
+      .toast.isVisible {
+        opacity: 1;
+        transform: translate(-50%, 0);
+        pointer-events: auto;
+      }
+
+      .toast.hasUndo {
+        padding-right: 0.375rem;
+      }
+
+      .toastUndo {
+        display: none;
+        height: 1.625rem;
+        padding: 0 0.75rem;
+        border: none;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.08);
+        color: #111;
+        font-family: var(--fontSans);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .toast.hasUndo .toastUndo {
+        display: block;
+      }
+
+      @media (max-width: 768px) {
+        .clipPanel {
+          border-radius: 1rem;
+        }
+
+        .panelHeader {
+          padding: 0.875rem 1rem 0.75rem;
+        }
+
+        .searchInput {
+          font-size: 1.0625rem;
+        }
+
+        .escHint {
+          display: none;
+        }
+
+        .headerClose {
+          display: block;
+        }
+
+        .chipRow {
+          padding: 0 1rem 0.75rem;
+        }
+
+        .panelBody {
+          grid-template-columns: minmax(0, 1fr);
+          overflow: hidden;
+        }
+
+        .itemList {
+          border-right: none;
+        }
+
+        .rowActions {
+          display: none;
+        }
+
+        .previewPane {
+          position: absolute;
+          inset: 0;
+          padding: 1rem;
+          background: var(--grain), #1a1a1d;
+          transform: translateX(100%);
+          transition: transform 0.36s var(--ease);
+          z-index: 2;
+        }
+
+        .clipPanel.showPreview .previewPane {
+          transform: translateX(0);
+        }
+
+        .previewClose {
+          display: grid;
+        }
+
+        .keyHints {
+          display: none;
+        }
+
+        .panelFooter {
+          padding: 0.5rem 0.5rem 0.5rem 1rem;
+        }
+
+        .aboutContent {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 2rem;
+          padding: 1.5rem 1rem;
+        }
+
+        .toast {
+          bottom: 3.5rem;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="0"
+      height="0"
+      style="position: absolute"
+    >
+      <defs>
+        <filter
+          id="grain-filter"
+          x="0%"
+          y="0%"
+          width="100%"
+          height="100%"
+          color-interpolation-filters="sRGB"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.72"
+            numOctaves="4"
+            stitchTiles="stitch"
+          ></feTurbulence>
+          <feColorMatrix type="saturate" values="0"></feColorMatrix>
+        </filter>
+        <filter
+          id="engraveFilter"
+          x="-5%"
+          y="-10%"
+          width="110%"
+          height="125%"
+          color-interpolation-filters="sRGB"
+        >
+          <feOffset
+            in="SourceAlpha"
+            dx="0"
+            dy="4"
+            result="shadowShift"
+          ></feOffset>
+          <feGaussianBlur
+            in="shadowShift"
+            stdDeviation="2.5"
+            result="shadowSoft"
+          ></feGaussianBlur>
+          <feComposite
+            in="SourceAlpha"
+            in2="shadowSoft"
+            operator="out"
+            result="shadowBand"
+          ></feComposite>
+          <feFlood
+            flood-color="#000000"
+            flood-opacity="0.9"
+            result="shadowColor"
+          ></feFlood>
+          <feComposite
+            in="shadowColor"
+            in2="shadowBand"
+            operator="in"
+            result="innerShadow"
+          ></feComposite>
+          <feOffset
+            in="SourceAlpha"
+            dx="0"
+            dy="1.5"
+            result="rimShift"
+          ></feOffset>
+          <feComposite
+            in="rimShift"
+            in2="SourceAlpha"
+            operator="out"
+            result="rimBand"
+          ></feComposite>
+          <feFlood
+            flood-color="#ffffff"
+            flood-opacity="0.13"
+            result="rimColor"
+          ></feFlood>
+          <feComposite
+            in="rimColor"
+            in2="rimBand"
+            operator="in"
+            result="lightRim"
+          ></feComposite>
+          <feMerge>
+            <feMergeNode in="lightRim"></feMergeNode>
+            <feMergeNode in="SourceGraphic"></feMergeNode>
+            <feMergeNode in="innerShadow"></feMergeNode>
+          </feMerge>
+        </filter>
+      </defs>
+    </svg>
+
+    <div
+      class="clipPanel"
+      id="clipPanel"
+      role="dialog"
+      aria-label="Clipboard history"
+    >
+      <header class="panelHeader">
+        <span class="headerIcon" data-icon="search"></span>
+        <input
+          id="searchInput"
+          class="searchInput"
+          type="text"
+          placeholder="Search clipboard"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search clipboard"
+        />
+        <kbd class="escHint">Esc</kbd>
+        <button class="headerClose" id="headerClose" type="button">Done</button>
+      </header>
+
+      <nav class="chipRow" id="chipRow" aria-label="Filter by type"></nav>
+
+      <div class="panelBody">
+        <div
+          class="itemList"
+          id="itemList"
+          role="listbox"
+          aria-label="Clipboard items"
+        ></div>
+        <aside class="previewPane" id="previewPane"></aside>
+      </div>
+
+      <footer class="panelFooter">
+        <span class="privacyNote"
+          ><span data-icon="lock"></span>
+          <span class="privacyText" id="privacyText"
+            >Password copies are never saved</span
+          >
+        </span>
+        <span class="footerEnd">
+          <span class="keyHints">
+            <span><kbd>↑</kbd><kbd>↓</kbd> Move</span>
+            <span><kbd>Enter</kbd> Copy</span>
+            <span><kbd>Tab</kbd> Filter</span>
+            <span><kbd>Ctrl</kbd><kbd>P</kbd> Pin</span>
+            <span><kbd>Del</kbd> Remove</span>
+          </span>
+          <span class="footerActions">
+            <button class="aboutBtn" id="clearBtn" type="button">
+              <span data-icon="trash"></span><span>Clear</span>
+            </button>
+            <button class="aboutBtn" id="aboutBtn" type="button">
+              <span data-icon="info"></span><span>About</span>
+            </button>
+          </span>
+        </span>
+      </footer>
+
+      <section class="aboutView" id="aboutView" aria-label="About PookieClip">
+        <div class="aboutBar">
+          <button class="backBtn" id="aboutBack" type="button">
+            <span data-icon="back"></span><span>Back</span>
+          </button>
+        </div>
+        <div class="aboutContent">
+          <div class="appIdentity">
+            <div class="appIcon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 1024 1024"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="aboutIconBg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#a19b93" />
+                    <stop offset="1" stop-color="#4a4743" />
+                  </linearGradient>
+                </defs>
+                <rect
+                  x="64"
+                  y="64"
+                  width="896"
+                  height="896"
+                  rx="200"
+                  fill="url(#aboutIconBg)"
+                />
+                <rect
+                  x="66"
+                  y="66"
+                  width="892"
+                  height="892"
+                  rx="198"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.14)"
+                  stroke-width="4"
+                />
+                <rect
+                  x="300"
+                  y="250"
+                  width="424"
+                  height="520"
+                  rx="64"
+                  fill="#ffffff"
+                  fill-opacity="0.35"
+                  transform="rotate(-8 512 510)"
+                />
+                <rect
+                  x="300"
+                  y="300"
+                  width="424"
+                  height="520"
+                  rx="64"
+                  fill="#ffffff"
+                  fill-opacity="0.92"
+                />
+                <rect
+                  x="412"
+                  y="256"
+                  width="200"
+                  height="96"
+                  rx="40"
+                  fill="#2a2a2e"
+                />
+                <rect
+                  x="372"
+                  y="440"
+                  width="280"
+                  height="28"
+                  rx="14"
+                  fill="#2a2a2e"
+                  fill-opacity="0.28"
+                />
+                <rect
+                  x="372"
+                  y="510"
+                  width="220"
+                  height="28"
+                  rx="14"
+                  fill="#2a2a2e"
+                  fill-opacity="0.28"
+                />
+                <rect
+                  x="372"
+                  y="580"
+                  width="250"
+                  height="28"
+                  rx="14"
+                  fill="#2a2a2e"
+                  fill-opacity="0.28"
+                />
+                <rect
+                  x="372"
+                  y="650"
+                  width="160"
+                  height="28"
+                  rx="14"
+                  fill="#2a2a2e"
+                  fill-opacity="0.28"
+                />
+              </svg>
+            </div>
+            <div>
+              <h1 class="appName">PookieClip</h1>
+              <p class="appTagline">
+                A fast, searchable clipboard manager for Linux.
+              </p>
+            </div>
+            <div class="metaList">
+              <div class="metaRow">
+                <span class="metaLabel">Version</span
+                ><span id="appVersion">0.1.0</span>
+              </div>
+              <div class="metaRow">
+                <span class="metaLabel">License</span><span>MIT</span>
+              </div>
+            </div>
+            <div class="linkList" id="projectLinks"></div>
+          </div>
+
+          <div>
+            <p class="sectionLabel">Made by</p>
+            <h2 class="makerName">Grace Peter Mutiibwa</h2>
+            <p class="makerBio">
+              Software engineer and educator from Mbarara, Uganda. Founder of
+              Clearnique and creator of open source developer tools like
+              PookieDB, Moldo and DiagramDSL.
+            </p>
+            <div class="linkList" id="makerLinks"></div>
+            <p class="creditNote">
+              Interface icons from coolicons by Kryston Schwarze, licensed CC BY
+              4.0.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div class="confirmLayer" id="confirmLayer">
+        <div
+          class="confirmCard"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="confirmTitle"
+          aria-describedby="confirmText"
+        >
+          <h2 class="confirmTitle" id="confirmTitle">
+            Clear clipboard history?
+          </h2>
+          <p class="confirmText" id="confirmText"></p>
+          <div class="confirmActions">
+            <button class="btn btnSecondary" id="confirmCancel" type="button">
+              Cancel
+            </button>
+            <button class="btn btnPrimary" id="confirmClear" type="button">
+              Clear history
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite">
+        <span id="toastText"></span>
+        <button class="toastUndo" id="toastUndo" type="button">Undo</button>
+      </div>
+    </div>
+
+    <script>
+      // Icons from SVG Repo (coolicons line set), cleaned to bare paths
+      const icons = {
+        search:
+          "M15 15L21 21M10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10C17 13.866 13.866 17 10 17Z",
+        text: "M4 18H14M4 14H20M4 10H14M4 6H20",
+        link: "M8 12H16M15 8H17C19.2091 8 21 9.79086 21 12C21 14.2091 19.2091 16 17 16H15M9 8H7C4.79086 8 3 9.79086 3 12C3 14.2091 4.79086 16 7 16H9",
+        code: "M15 7L20 12L15 17M9 17L4 12L9 7",
+        image:
+          "M3.00005 17.0001C3 16.9355 3 16.8689 3 16.8002V7.2002C3 6.08009 3 5.51962 3.21799 5.0918C3.40973 4.71547 3.71547 4.40973 4.0918 4.21799C4.51962 4 5.08009 4 6.2002 4H17.8002C18.9203 4 19.4801 4 19.9079 4.21799C20.2842 4.40973 20.5905 4.71547 20.7822 5.0918C21 5.5192 21 6.07899 21 7.19691V16.8031C21 17.2881 21 17.6679 20.9822 17.9774M3.00005 17.0001C3.00082 17.9884 3.01337 18.5058 3.21799 18.9074C3.40973 19.2837 3.71547 19.5905 4.0918 19.7822C4.5192 20 5.07899 20 6.19691 20H17.8036C18.9215 20 19.4805 20 19.9079 19.7822C20.2842 19.5905 20.5905 19.2837 20.7822 18.9074C20.9055 18.6654 20.959 18.3813 20.9822 17.9774M3.00005 17.0001L7.76798 11.4375L7.76939 11.436C8.19227 10.9426 8.40406 10.6955 8.65527 10.6064C8.87594 10.5282 9.11686 10.53 9.33643 10.6113C9.58664 10.704 9.79506 10.9539 10.2119 11.4541L12.8831 14.6595C13.269 15.1226 13.463 15.3554 13.6986 15.4489C13.9065 15.5313 14.1357 15.5406 14.3501 15.4773C14.5942 15.4053 14.8091 15.1904 15.2388 14.7607L15.7358 14.2637C16.1733 13.8262 16.3921 13.6076 16.6397 13.5361C16.8571 13.4734 17.0896 13.4869 17.2988 13.5732C17.537 13.6716 17.7302 13.9124 18.1167 14.3955L20.9822 17.9774M20.9822 17.9774L21 17.9996M15 10C14.4477 10 14 9.55228 14 9C14 8.44772 14.4477 8 15 8C15.5523 8 16 8.44772 16 9C16 9.55228 15.5523 10 15 10Z",
+        folder:
+          "M3 6V16.8C3 17.9201 3 18.4798 3.21799 18.9076C3.40973 19.2839 3.71547 19.5905 4.0918 19.7822C4.5192 20 5.07899 20 6.19691 20H17.8031C18.921 20 19.48 20 19.9074 19.7822C20.2837 19.5905 20.5905 19.2841 20.7822 18.9078C21.0002 18.48 21.0002 17.9199 21.0002 16.7998L21.0002 9.19978C21.0002 8.07967 21.0002 7.51962 20.7822 7.0918C20.5905 6.71547 20.2839 6.40973 19.9076 6.21799C19.4798 6 18.9201 6 17.8 6H12M3 6H12M3 6C3 4.89543 3.89543 4 5 4H8.67452C9.1637 4 9.40886 4 9.63904 4.05526C9.84311 4.10425 10.0379 4.18526 10.2168 4.29492C10.4186 4.41857 10.5918 4.59182 10.9375 4.9375L12 6",
+        file: "M13 3.00087C12.9045 3 12.7973 3 12.6747 3H8.2002C7.08009 3 6.51962 3 6.0918 3.21799C5.71547 3.40973 5.40973 3.71547 5.21799 4.0918C5 4.51962 5 5.08009 5 6.2002V17.8002C5 18.9203 5 19.4801 5.21799 19.9079C5.40973 20.2842 5.71547 20.5905 6.0918 20.7822C6.51921 21 7.079 21 8.19694 21L15.8031 21C16.921 21 17.48 21 17.9074 20.7822C18.2837 20.5905 18.5905 20.2842 18.7822 19.9079C19 19.4805 19 18.9215 19 17.8036V9.32568C19 9.20296 19 9.09561 18.9991 9M13 3.00087C13.2856 3.00347 13.4663 3.01385 13.6388 3.05526C13.8429 3.10425 14.0379 3.18526 14.2168 3.29492C14.4186 3.41857 14.5918 3.59182 14.9375 3.9375L18.063 7.06298C18.4089 7.40889 18.5809 7.58136 18.7046 7.78319C18.8142 7.96214 18.8953 8.15726 18.9443 8.36133C18.9857 8.53376 18.9963 8.71451 18.9991 9M13 3.00087V5.8C13 6.9201 13 7.47977 13.218 7.90759C13.4097 8.28392 13.7155 8.59048 14.0918 8.78223C14.5192 9 15.079 9 16.1969 9H18.9991M18.9991 9H19.0002",
+        copy: "M9 9V6.2002C9 5.08009 9 4.51962 9.21799 4.0918C9.40973 3.71547 9.71547 3.40973 10.0918 3.21799C10.5196 3 11.0801 3 12.2002 3H17.8002C18.9203 3 19.4801 3 19.9079 3.21799C20.2842 3.40973 20.5905 3.71547 20.7822 4.0918C21.0002 4.51962 21.0002 5.07967 21.0002 6.19978V11.7998C21.0002 12.9199 21.0002 13.48 20.7822 13.9078C20.5905 14.2841 20.2839 14.5905 19.9076 14.7822C19.4802 15 18.921 15 17.8031 15H15M9 9H6.2002C5.08009 9 4.51962 9 4.0918 9.21799C3.71547 9.40973 3.40973 9.71547 3.21799 10.0918C3 10.5196 3 11.0801 3 12.2002V17.8002C3 18.9203 3 19.4801 3.21799 19.9079C3.40973 20.2842 3.71547 20.5905 4.0918 20.7822C4.5192 21 5.07899 21 6.19691 21H11.8036C12.9215 21 13.4805 21 13.9079 20.7822C14.2842 20.5905 14.5905 20.2839 14.7822 19.9076C15 19.4802 15 18.921 15 17.8031V15M9 9H11.8002C12.9203 9 13.4801 9 13.9079 9.21799C14.2842 9.40973 14.5905 9.71547 14.7822 10.0918C15 10.5192 15 11.079 15 12.1969L15 15",
+        trash:
+          "M14 10V17M10 10V17M6 6V17.8C6 18.9201 6 19.4798 6.21799 19.9076C6.40973 20.2839 6.71547 20.5905 7.0918 20.7822C7.5192 21 8.07899 21 9.19691 21H14.8031C15.921 21 16.48 21 16.9074 20.7822C17.2837 20.5905 17.5905 20.2839 17.7822 19.9076C18 19.4802 18 18.921 18 17.8031V6M6 6H8M6 6H4M8 6H16M8 6C8 5.06812 8 4.60241 8.15224 4.23486C8.35523 3.74481 8.74432 3.35523 9.23438 3.15224C9.60192 3 10.0681 3 11 3H13C13.9319 3 14.3978 3 14.7654 3.15224C15.2554 3.35523 15.6447 3.74481 15.8477 4.23486C15.9999 4.6024 16 5.06812 16 6M16 6H18M18 6H20",
+        lock: "M9.23047 9H7.2002C6.08009 9 5.51962 9 5.0918 9.21799C4.71547 9.40973 4.40973 9.71547 4.21799 10.0918C4 10.5196 4 11.0801 4 12.2002V17.8002C4 18.9203 4 19.4801 4.21799 19.9079C4.40973 20.2842 4.71547 20.5905 5.0918 20.7822C5.5192 21 6.07902 21 7.19694 21H16.8031C17.921 21 18.48 21 18.9074 20.7822C19.2837 20.5905 19.5905 20.2842 19.7822 19.9079C20 19.4805 20 18.9215 20 17.8036V12.1969C20 11.079 20 10.5192 19.7822 10.0918C19.5905 9.71547 19.2837 9.40973 18.9074 9.21799C18.4796 9 17.9203 9 16.8002 9H14.7689M9.23047 9H14.7689M9.23047 9C9.10302 9 9 8.89668 9 8.76923V6C9 4.34315 10.3431 3 12 3C13.6569 3 15 4.34315 15 6V8.76923C15 8.89668 14.8964 9 14.7689 9",
+        pin: "M6 7.2002V16.6854C6 18.0464 6 18.7268 6.20412 19.1433C6.58245 19.9151 7.41157 20.3588 8.26367 20.2454C8.7234 20.1842 9.28964 19.8067 10.4221 19.0518L10.4248 19.0499C10.8737 18.7507 11.0981 18.6011 11.333 18.5181C11.7642 18.3656 12.2348 18.3656 12.666 18.5181C12.9013 18.6012 13.1266 18.7515 13.5773 19.0519C14.7098 19.8069 15.2767 20.1841 15.7364 20.2452C16.5885 20.3586 17.4176 19.9151 17.7959 19.1433C18 18.7269 18 18.0462 18 16.6854V7.19691C18 6.07899 18 5.5192 17.7822 5.0918C17.5905 4.71547 17.2837 4.40973 16.9074 4.21799C16.4796 4 15.9203 4 14.8002 4H9.2002C8.08009 4 7.51962 4 7.0918 4.21799C6.71547 4.40973 6.40973 4.71547 6.21799 5.0918C6 5.51962 6 6.08009 6 7.2002Z",
+        close: "M16 16L12 12M12 12L8 8M12 12L16 8M12 12L8 16",
+        warning:
+          "M12 8.4502V12.4502M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 15.4502V15.5502L11.9502 15.5498V15.4502H12.0498Z",
+        info: "M12 11V16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 8V8.1L11.9502 8.1002V8H12.0498Z",
+        back: "M15 19L8 12L15 5",
+        external:
+          "M10.0002 5H8.2002C7.08009 5 6.51962 5 6.0918 5.21799C5.71547 5.40973 5.40973 5.71547 5.21799 6.0918C5 6.51962 5 7.08009 5 8.2002V15.8002C5 16.9203 5 17.4801 5.21799 17.9079C5.40973 18.2842 5.71547 18.5905 6.0918 18.7822C6.5192 19 7.07899 19 8.19691 19H15.8031C16.921 19 17.48 19 17.9074 18.7822C18.2837 18.5905 18.5905 18.2839 18.7822 17.9076C19 17.4802 19 16.921 19 15.8031V14M20 9V4M20 4H15M20 4L13 11",
+      };
+
+      function iconSvg(name, extraClass = "") {
+        return `<svg class="icon ${extraClass}" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="${icons[name]}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      }
+
+      const projectLinks = [
+        {
+          label: "Source code",
+          url: "https://github.com/GracePeterMutiibwa/pookieclip",
+        },
+        {
+          label: "Report an issue",
+          url: "https://github.com/GracePeterMutiibwa/pookieclip/issues",
+        },
+      ];
+
+      const makerLinks = [
+        { label: "GitHub", url: "https://github.com/GracePeterMutiibwa" },
+        {
+          label: "LinkedIn",
+          url: "https://ug.linkedin.com/in/mutiibwa-grace-peter-8221a5200",
+        },
+        { label: "Website", url: "https://gracepeter.clearnique.com" },
+        { label: "Substack", url: "https://gracepetermutiibwa.substack.com" },
+        { label: "Blog", url: "https://solace.forum" },
+      ];
+
+      const minute = 60000;
+      const hour = 60 * minute;
+      const day = 24 * hour;
+
+      const imageArts = {
+        screenshot:
+          "linear-gradient(180deg, rgba(255,255,255,0.92) 0 11%, transparent 11%), linear-gradient(90deg, #cfcac2 0 26%, #f3f1ed 26% 100%)",
+        photo:
+          "radial-gradient(circle at 30% 34%, #f3ead9 0 10%, transparent 11%), linear-gradient(180deg, #8d97a1 0%, #cbc3b6 56%, #5e5951 57%, #36332f 100%)",
+      };
+
+      const typeMeta = {
+        text: { label: "Text", icon: "text" },
+        link: { label: "Link", icon: "link" },
+        code: { label: "Code", icon: "code" },
+        color: { label: "Color", icon: null },
+        image: { label: "Image", icon: "image" },
+        file: { label: "File", icon: "file" },
+        folder: { label: "Folder", icon: "folder" },
+      };
+
+      const filters = [
+        { key: "all", label: "All" },
+        { key: "text", label: "Text", icon: "text" },
+        { key: "link", label: "Links", icon: "link" },
+        { key: "code", label: "Code", icon: "code" },
+        { key: "color", label: "Colors", swatch: true },
+        { key: "image", label: "Images", icon: "image" },
+        { key: "file", label: "Files", icon: "folder" },
+      ];
+
+      let nextId = 1;
+
+      function makeItem(fields) {
+        return Object.assign(
+          { id: nextId++, pinned: false, missing: false },
+          fields,
+        );
+      }
+
+      // Demo history until the clipboard watcher and storage are in place
+      function seedItems() {
+        const now = Date.now();
+        return [
+          makeItem({
+            type: "code",
+            lang: "JavaScript",
+            source: "VS Code",
+            time: now - 2 * minute,
+            content:
+              "const history = await clipStore.recent(50);\nfor (const item of history) {\n  if (item.pinned) continue;\n  render(item);\n}",
+          }),
+          makeItem({
+            type: "color",
+            source: "Inkscape",
+            time: now - 14 * minute,
+            content: "#E8E4DC",
+          }),
+          makeItem({
+            type: "image",
+            source: "Screenshot",
+            time: now - 26 * minute,
+            content: "Screenshot",
+            label: "Screenshot",
+            width: 1920,
+            height: 1080,
+            format: "PNG",
+            size: "412 KB",
+            art: imageArts.screenshot,
+          }),
+          makeItem({
+            type: "file",
+            source: "Files",
+            time: now - 48 * minute,
+            content: "~/Documents/Reports/q3-summary.pdf",
+          }),
+          makeItem({
+            type: "folder",
+            source: "Files",
+            time: now - 70 * minute,
+            content: "~/Projects/clipboard-ui",
+          }),
+          makeItem({
+            type: "link",
+            source: "Firefox",
+            time: now - 2 * hour,
+            content: "https://wiki.archlinux.org/title/Clipboard",
+            title: "Clipboard, ArchWiki",
+          }),
+          makeItem({
+            type: "text",
+            source: "Text Editor",
+            time: now - 3 * hour,
+            content:
+              "Meeting notes: move the release to Thursday, confirm the server migration window with ops, and send the updated design files before Wednesday noon.",
+          }),
+          makeItem({
+            type: "link",
+            source: "Firefox",
+            time: now - 3 * day,
+            pinned: true,
+            content:
+              "https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter",
+            title: "backdrop-filter, CSS | MDN",
+          }),
+          makeItem({
+            type: "text",
+            source: "Thunderbird",
+            time: now - 5 * day,
+            pinned: true,
+            content:
+              "Thanks for reaching out. I will get back to you by the end of the day.",
+          }),
+          makeItem({
+            type: "file",
+            source: "Files",
+            time: now - day - 2 * hour,
+            missing: true,
+            content: "~/Downloads/setup-old.deb",
+          }),
+          makeItem({
+            type: "color",
+            source: "Terminal",
+            time: now - day - 4 * hour,
+            content: "#4F7CAC",
+          }),
+          makeItem({
+            type: "code",
+            lang: "Shell",
+            source: "Terminal",
+            time: now - day - 5 * hour,
+            content: "sudo apt install wl-clipboard",
+          }),
+          makeItem({
+            type: "image",
+            source: "Image Viewer",
+            time: now - 2 * day,
+            content: "Photo",
+            label: "IMG_2041.jpg",
+            width: 4032,
+            height: 3024,
+            format: "JPEG",
+            size: "2.1 MB",
+            art: imageArts.photo,
+          }),
+          makeItem({
+            type: "text",
+            source: "Firefox",
+            time: now - 3 * day,
+            content: "Order #48213 ships on Monday",
+          }),
+        ];
+      }
+
+      const state = {
+        items: seedItems(),
+        filter: "all",
+        query: "",
+        selectedId: null,
+        lastRemoved: null,
+      };
+
+      const panel = document.getElementById("clipPanel");
+      const searchInput = document.getElementById("searchInput");
+      const chipRow = document.getElementById("chipRow");
+      const itemList = document.getElementById("itemList");
+      const previewPane = document.getElementById("previewPane");
+      const toast = document.getElementById("toast");
+      const toastText = document.getElementById("toastText");
+      const toastUndo = document.getElementById("toastUndo");
+      const headerClose = document.getElementById("headerClose");
+      const aboutBtn = document.getElementById("aboutBtn");
+      const aboutBack = document.getElementById("aboutBack");
+      const clearBtn = document.getElementById("clearBtn");
+      const confirmLayer = document.getElementById("confirmLayer");
+      const confirmText = document.getElementById("confirmText");
+      const confirmCancel = document.getElementById("confirmCancel");
+      const confirmClear = document.getElementById("confirmClear");
+
+      let toastTimer = null;
+      let undoHandler = null;
+
+      function isMobile() {
+        return window.matchMedia("(max-width: 768px)").matches;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+
+      function startOfToday() {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      }
+
+      function relTime(time) {
+        const diff = Date.now() - time;
+        if (diff < minute) return "Just now";
+        if (diff < hour) return `${Math.floor(diff / minute)}m ago`;
+        if (time >= startOfToday()) return `${Math.floor(diff / hour)}h ago`;
+        if (time >= startOfToday() - day) return "Yesterday";
+        return `${Math.ceil((startOfToday() - time) / day)}d ago`;
+      }
+
+      function baseName(path) {
+        const parts = path.split("/").filter(Boolean);
+        return parts[parts.length - 1] || path;
+      }
+
+      function parentPath(path) {
+        const idx = path.lastIndexOf("/");
+        return idx > 0 ? path.slice(0, idx) : path;
+      }
+
+      function hostOf(url) {
+        try {
+          return new URL(url).hostname.replace(/^www\./, "");
+        } catch (e) {
+          return url;
+        }
+      }
+
+      function getSearchTerms() {
+        return state.query.toLowerCase().split(/\s+/).filter(Boolean);
+      }
+
+      function matchesFilter(item, filterKey) {
+        if (filterKey === "all") return true;
+        if (filterKey === "file")
+          return item.type === "file" || item.type === "folder";
+        return item.type === filterKey;
+      }
+
+      function matchesTerms(item, terms) {
+        if (!terms.length) return true;
+        const haystack = [
+          item.content,
+          item.title,
+          item.label,
+          item.source,
+          typeMeta[item.type].label,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return terms.every((term) => haystack.includes(term));
+      }
+
+      function sortItems(list) {
+        return list.slice().sort((a, b) => {
+          if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+          return b.time - a.time;
+        });
+      }
+
+      function visibleItems() {
+        const terms = getSearchTerms();
+        return sortItems(
+          state.items.filter(
+            (item) =>
+              matchesFilter(item, state.filter) && matchesTerms(item, terms),
+          ),
+        );
+      }
+
+      // Wraps search matches in <mark> while escaping everything else
+      function highlight(text, terms) {
+        if (!terms.length) return escapeHtml(text);
+        const lower = text.toLowerCase();
+        const ranges = [];
+        terms.forEach((term) => {
+          let start = lower.indexOf(term);
+          while (start !== -1) {
+            ranges.push([start, start + term.length]);
+            start = lower.indexOf(term, start + term.length);
+          }
+        });
+        if (!ranges.length) return escapeHtml(text);
+        ranges.sort((a, b) => a[0] - b[0]);
+        const merged = [ranges[0]];
+        ranges.slice(1).forEach((range) => {
+          const last = merged[merged.length - 1];
+          if (range[0] <= last[1]) last[1] = Math.max(last[1], range[1]);
+          else merged.push(range);
+        });
+        let out = "";
+        let cursor = 0;
+        merged.forEach(([s, e]) => {
+          out +=
+            escapeHtml(text.slice(cursor, s)) +
+            "<mark>" +
+            escapeHtml(text.slice(s, e)) +
+            "</mark>";
+          cursor = e;
+        });
+        return out + escapeHtml(text.slice(cursor));
+      }
+
+      function rowTitleText(item) {
+        if (item.type === "text")
+          return item.content.replace(/\s+/g, " ").trim();
+        if (item.type === "link") return item.title || hostOf(item.content);
+        if (item.type === "code")
+          return (
+            item.content.split("\n").find((line) => line.trim()) || item.content
+          );
+        if (item.type === "color") return item.content.toUpperCase();
+        if (item.type === "image") return item.label;
+        return baseName(item.content);
+      }
+
+      function rowMetaText(item) {
+        let detail = typeMeta[item.type].label;
+        if (item.type === "link") detail = hostOf(item.content);
+        if (item.type === "code") detail = item.lang || "Code";
+        if (item.type === "image") detail = `${item.width} × ${item.height}`;
+        if (item.type === "file" || item.type === "folder")
+          detail = parentPath(item.content);
+        if (item.missing) detail = "Missing";
+        return `${detail} · ${item.source} · ${relTime(item.time)}`;
+      }
+
+      function tileHtml(item) {
+        if (item.type === "color")
+          return `<div class="rowTile isSwatch" style="background:${escapeHtml(item.content)}"></div>`;
+        if (item.type === "image")
+          return `<div class="rowTile isImage" style="background-image:${item.art}"></div>`;
+        const icon = item.missing ? "warning" : typeMeta[item.type].icon;
+        return `<div class="rowTile">${iconSvg(icon)}</div>`;
+      }
+
+      function groupName(item) {
+        if (item.pinned) return "Pinned";
+        return item.time >= startOfToday() ? "Today" : "Earlier";
+      }
+
+      function filterCount(filterKey) {
+        const terms = getSearchTerms();
+        return state.items.filter(
+          (item) => matchesFilter(item, filterKey) && matchesTerms(item, terms),
+        ).length;
+      }
+
+      function renderChips() {
+        chipRow.innerHTML = filters
+          .map((f) => {
+            const lead = f.swatch
+              ? '<span class="chipSwatch"></span>'
+              : f.icon
+                ? iconSvg(f.icon)
+                : "";
+            const active = state.filter === f.key ? "isActive" : "";
+            return `<button class="chip ${active}" type="button" data-filter="${f.key}">${lead}<span>${f.label}</span><span class="chipCount">${filterCount(f.key)}</span></button>`;
+          })
+          .join("");
+      }
+
+      function renderList(list) {
+        if (!list.length) {
+          const filterLabel = filters
+            .find((f) => f.key === state.filter)
+            .label.toLowerCase();
+          const title = state.query
+            ? `No matches for “${escapeHtml(state.query)}”`
+            : `No ${state.filter === "all" ? "items" : filterLabel} yet`;
+          const hint = state.query
+            ? "Try another word or switch the filter."
+            : "Copy something and it will show up here.";
+          itemList.innerHTML = `<div class="emptyState">${iconSvg("search")}<div class="emptyTitle">${title}</div><div>${hint}</div></div>`;
+          return;
+        }
+
+        const terms = getSearchTerms();
+        let html = "";
+        let currentGroup = "";
+        list.forEach((item) => {
+          const group = groupName(item);
+          if (group !== currentGroup) {
+            html += `<div class="groupLabel">${group}</div>`;
+            currentGroup = group;
+          }
+          const selected = item.id === state.selectedId;
+          const classes = [
+            "itemRow",
+            selected ? "isSelected" : "",
+            item.pinned ? "isPinned" : "",
+            item.missing ? "isMissing" : "",
+          ].join(" ");
+          const titleClasses = [
+            "rowTitle",
+            item.type === "text" ? "isClamp" : "",
+            item.type === "code" || item.type === "color" ? "isMono" : "",
+          ].join(" ");
+          html += `
+        <div class="${classes}" role="option" aria-selected="${selected}" data-id="${item.id}">
+          ${tileHtml(item)}
+          <div class="rowMain">
+            <div class="${titleClasses}">${highlight(rowTitleText(item), terms)}</div>
+            <div class="rowMeta">${escapeHtml(rowMetaText(item))}</div>
+          </div>
+          <div class="rowActions">
+            <button class="iconBtn" type="button" data-action="pin" aria-label="${item.pinned ? "Unpin" : "Pin"}">${iconSvg("pin", "pinIcon")}</button>
+            <button class="iconBtn" type="button" data-action="remove" aria-label="Remove">${iconSvg("trash")}</button>
+          </div>
+        </div>`;
+        });
+        itemList.innerHTML = html;
+      }
+
+      const codeKeywords = new Set([
+        "const",
+        "let",
+        "var",
+        "for",
+        "of",
+        "in",
+        "if",
+        "else",
+        "return",
+        "await",
+        "async",
+        "function",
+        "continue",
+        "break",
+        "new",
+        "import",
+        "from",
+        "export",
+        "class",
+        "while",
+        "true",
+        "false",
+        "null",
+        "undefined",
+        "sudo",
+        "apt",
+        "install",
+        "git",
+        "npm",
+        "cd",
+        "ls",
+      ]);
+
+      function highlightCode(source) {
+        const pattern =
+          /(\/\/.*$|#.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(\d+(?:\.\d+)?)\b|\b([A-Za-z_]\w*)\b/gm;
+        let out = "";
+        let cursor = 0;
+        let match;
+        while ((match = pattern.exec(source)) !== null) {
+          out += escapeHtml(source.slice(cursor, match.index));
+          const [token, comment, str, num, word] = match;
+          if (comment)
+            out += `<span class="tokComment">${escapeHtml(comment)}</span>`;
+          else if (str)
+            out += `<span class="tokString">${escapeHtml(str)}</span>`;
+          else if (num) out += `<span class="tokNumber">${num}</span>`;
+          else if (word && codeKeywords.has(word))
+            out += `<span class="tokKeyword">${word}</span>`;
+          else out += escapeHtml(token);
+          cursor = match.index + token.length;
+        }
+        return out + escapeHtml(source.slice(cursor));
+      }
+
+      function hexToRgb(hex) {
+        const value = parseInt(hex.replace("#", ""), 16);
+        return {
+          r: (value >> 16) & 255,
+          g: (value >> 8) & 255,
+          b: value & 255,
+        };
+      }
+
+      function rgbToHsl({ r, g, b }) {
+        const rn = r / 255,
+          gn = g / 255,
+          bn = b / 255;
+        const max = Math.max(rn, gn, bn),
+          min = Math.min(rn, gn, bn);
+        const l = (max + min) / 2;
+        let h = 0,
+          s = 0;
+        if (max !== min) {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          if (max === rn) h = (gn - bn) / d + (gn < bn ? 6 : 0);
+          else if (max === gn) h = (bn - rn) / d + 2;
+          else h = (rn - gn) / d + 4;
+          h *= 60;
+        }
+        return {
+          h: Math.round(h),
+          s: Math.round(s * 100),
+          l: Math.round(l * 100),
+        };
+      }
+
+      function previewBodyHtml(item) {
+        if (item.type === "text") {
+          const words = item.content.trim().split(/\s+/).filter(Boolean).length;
+          return `<p class="previewText">${escapeHtml(item.content)}</p><div class="previewStats">${item.content.length} characters, ${words} words</div>`;
+        }
+        if (item.type === "link") {
+          return `<div class="linkCard"><div class="linkHost">${escapeHtml(hostOf(item.content))}</div>${item.title ? `<div class="linkTitle">${escapeHtml(item.title)}</div>` : ""}<div class="linkUrl">${escapeHtml(item.content)}</div></div>`;
+        }
+        if (item.type === "code") {
+          const lines = item.content.split("\n").length;
+          return `<div class="previewStats">${escapeHtml(item.lang || "Code")}, ${lines} ${lines === 1 ? "line" : "lines"}</div><pre class="codeBlock">${highlightCode(item.content)}</pre>`;
+        }
+        if (item.type === "color") {
+          const rgb = hexToRgb(item.content);
+          const hsl = rgbToHsl(rgb);
+          const values = [
+            ["HEX", item.content.toUpperCase()],
+            ["RGB", `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`],
+            ["HSL", `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`],
+          ];
+          const rows = values
+            .map(
+              ([label, value]) =>
+                `<div class="valueRow"><span class="valueLabel">${label}</span><span class="valueText">${escapeHtml(value)}</span><button class="iconBtn" type="button" data-action="copyValue" data-value="${escapeHtml(value)}" aria-label="Copy ${label}">${iconSvg("copy")}</button></div>`,
+            )
+            .join("");
+          return `<div class="swatchLarge" style="background:${escapeHtml(item.content)}"></div><div class="valueList">${rows}</div>`;
+        }
+        if (item.type === "image") {
+          return `<div class="imageFrame" style="background-image:${item.art}"></div><div class="previewStats">${escapeHtml(item.label)}, ${item.width} × ${item.height}, ${item.format}, ${item.size}</div>`;
+        }
+        const icon = item.missing ? "warning" : typeMeta[item.type].icon;
+        const notice = item.missing
+          ? `<div class="noticeRow">${iconSvg("warning")}<span>This ${item.type} was moved or deleted, so it can't be pasted anymore.</span></div>`
+          : `<div class="noticeRow">${iconSvg(item.type === "folder" ? "folder" : "file")}<span>Copied as a ${item.type} reference. Pasting it in a file manager copies the actual ${item.type}.</span></div>`;
+        return `<div class="fileHead"><div class="fileTile">${iconSvg(icon)}</div><div><div class="fileName">${escapeHtml(baseName(item.content))}</div><div class="filePath">${escapeHtml(item.content)}</div></div></div>${notice}`;
+      }
+
+      function renderPreview(item) {
+        if (!item) {
+          previewPane.innerHTML =
+            '<div class="previewEmpty">Select an item to preview it</div>';
+          return;
+        }
+        const pinLabel = item.pinned ? "Unpin" : "Pin";
+        previewPane.innerHTML = `
+      <div class="previewHead">
+        <div>
+          <div class="previewType">${typeMeta[item.type].label}</div>
+          <div class="previewSource">${escapeHtml(item.source)}, ${relTime(item.time).toLowerCase()}</div>
+        </div>
+        <button class="iconBtn previewClose" type="button" data-action="closePreview" aria-label="Close preview">${iconSvg("close")}</button>
+      </div>
+      ${previewBodyHtml(item)}
+      <div class="previewActions">
+        <button class="btn btnPrimary" type="button" data-action="copy" ${item.missing ? "disabled" : ""}>${iconSvg("copy")}<span>Copy</span><kbd>Enter</kbd></button>
+        ${item.type === "link" ? `<button class="btn btnSecondary" type="button" data-action="open">${iconSvg("external")}<span>Open</span></button>` : ""}
+        <button class="btn btnSecondary ${item.pinned ? "isPinned" : ""}" type="button" data-action="pin">${iconSvg("pin", "pinIcon")}<span>${pinLabel}</span></button>
+        <button class="btn btnSecondary" type="button" data-action="remove">${iconSvg("trash")}<span>Remove</span></button>
+      </div>`;
+      }
+
+      function renderLinkList(container, links) {
+        container.innerHTML = links
+          .map(
+            (link) => `
+      <button class="linkRow" type="button" data-url="${escapeHtml(link.url)}">
+        <span class="linkRowLabel">${escapeHtml(link.label)}</span>
+        <span class="linkRowHost"><span>${escapeHtml(hostOf(link.url))}</span>${iconSvg("external")}</span>
+      </button>`,
+          )
+          .join("");
+      }
+
+      function render() {
+        const list = visibleItems();
+        if (!list.some((item) => item.id === state.selectedId)) {
+          state.selectedId = list.length ? list[0].id : null;
+        }
+        renderChips();
+        renderList(list);
+        renderPreview(list.find((item) => item.id === state.selectedId));
+      }
+
+      function scrollSelectedIntoView() {
+        const row = itemList.querySelector(".itemRow.isSelected");
+        if (row) row.scrollIntoView({ block: "nearest" });
+      }
+
+      function getItem(id) {
+        return state.items.find((item) => item.id === id);
+      }
+
+      function refocusSearch() {
+        if (!isMobile() && !panel.classList.contains("showAbout"))
+          searchInput.focus();
+      }
+
+      function showToast(message, onUndo) {
+        clearTimeout(toastTimer);
+        toastText.textContent = message;
+        undoHandler = onUndo || null;
+        toast.classList.toggle("hasUndo", Boolean(onUndo));
+        toast.classList.add("isVisible");
+        toastTimer = setTimeout(
+          () => toast.classList.remove("isVisible"),
+          onUndo ? 4000 : 2000,
+        );
+      }
+
+      function writeToClipboard(text) {
+        if (navigator.clipboard)
+          navigator.clipboard.writeText(text).catch(() => {});
+      }
+
+      // Opens links in the default browser through the opener plugin
+      function openExternal(url) {
+        window.__TAURI__.core.invoke("plugin:opener|open_url", { url });
+      }
+
+      // Hides the panel window once the toggle step is in place
+      function hidePanel() {
+        panel.classList.remove("showPreview", "showAbout", "showConfirm");
+        toast.classList.remove("isVisible");
+        window.__TAURI__.core.invoke("close_panel");
+      }
+
+      function copyItem(item) {
+        if (!item) return;
+        if (item.missing) {
+          showToast(`This ${item.type} no longer exists`);
+          return;
+        }
+
+        window.__TAURI__.core.invoke("copy_clip", {
+          mimeType: item.clip.mimeType,
+          content: item.clip.content,
+        });
+
+        if (!item.pinned) item.time = Date.now();
+        render();
+        scrollSelectedIntoView();
+        hidePanel();
+      }
+
+      function togglePin(item) {
+        if (!item) return;
+        item.pinned = !item.pinned;
+        item.clip.pinned = item.pinned;
+        window.__TAURI__.core.invoke("set_pinned", {
+          id: item.id,
+          pinned: item.pinned,
+        });
+        render();
+        scrollSelectedIntoView();
+        showToast(item.pinned ? "Pinned" : "Unpinned");
+      }
+
+      function removeItem(item) {
+        if (!item) return;
+        const list = visibleItems();
+        const listIndex = list.findIndex((i) => i.id === item.id);
+        const neighbour = list[listIndex + 1] || list[listIndex - 1] || null;
+        state.items = state.items.filter((i) => i.id !== item.id);
+        state.lastRemoved = item;
+        state.selectedId = neighbour ? neighbour.id : null;
+        window.__TAURI__.core.invoke("remove_clip", { id: item.id });
+        panel.classList.remove("showPreview");
+        render();
+        showToast("Removed", undoRemove);
+      }
+
+      function undoRemove() {
+        if (!state.lastRemoved) return;
+        window.__TAURI__.core.invoke("restore_clips", {
+          clips: [state.lastRemoved.clip],
+        });
+        state.items.push(state.lastRemoved);
+        state.selectedId = state.lastRemoved.id;
+        state.lastRemoved = null;
+        toast.classList.remove("isVisible");
+        render();
+        scrollSelectedIntoView();
+        refocusSearch();
+      }
+
+      function moveSelection(step) {
+        const list = visibleItems();
+        if (!list.length) return;
+        const idx = list.findIndex((item) => item.id === state.selectedId);
+        const nextIdx = Math.min(Math.max(idx + step, 0), list.length - 1);
+        state.selectedId = list[nextIdx].id;
+        render();
+        scrollSelectedIntoView();
+      }
+
+      function cycleFilter(step) {
+        const idx = filters.findIndex((f) => f.key === state.filter);
+        state.filter =
+          filters[(idx + step + filters.length) % filters.length].key;
+        state.selectedId = null;
+        render();
+        itemList.scrollTop = 0;
+      }
+
+      function openAbout() {
+        panel.classList.remove("showPreview");
+        panel.classList.add("showAbout");
+        searchInput.blur();
+        aboutBack.focus();
+      }
+
+      function closeAbout() {
+        panel.classList.remove("showAbout");
+        refocusSearch();
+      }
+
+      // Pinned items are always kept when clearing
+      function openConfirm() {
+        const clearable = state.items.filter((item) => !item.pinned).length;
+        if (!clearable) {
+          showToast("Nothing to clear");
+          return;
+        }
+        const pinned = state.items.length - clearable;
+        const pinnedNote = pinned
+          ? ` Your ${pinned} pinned ${pinned === 1 ? "item stays" : "items stay"}.`
+          : "";
+        confirmText.textContent = `This removes ${clearable} ${clearable === 1 ? "item" : "items"} from your history.${pinnedNote}`;
+        panel.classList.remove("showPreview");
+        panel.classList.add("showConfirm");
+        searchInput.blur();
+        confirmCancel.focus();
+      }
+
+      function closeConfirm() {
+        panel.classList.remove("showConfirm");
+        refocusSearch();
+      }
+
+      function clearHistory() {
+        const removed = state.items.filter((item) => !item.pinned);
+        state.items = state.items.filter((item) => item.pinned);
+        state.selectedId = null;
+        window.__TAURI__.core.invoke("clear_history");
+        closeConfirm();
+        render();
+        showToast("History cleared", () => {
+          window.__TAURI__.core.invoke("restore_clips", {
+            clips: removed.map((item) => item.clip),
+          });
+          state.items = state.items.concat(removed);
+          toast.classList.remove("isVisible");
+          render();
+          refocusSearch();
+        });
+      }
+
+      chipRow.addEventListener("click", (event) => {
+        const chip = event.target.closest(".chip");
+        if (!chip) return;
+        state.filter = chip.dataset.filter;
+        state.selectedId = null;
+        render();
+        itemList.scrollTop = 0;
+        refocusSearch();
+      });
+
+      itemList.addEventListener("click", (event) => {
+        const row = event.target.closest(".itemRow");
+        if (!row) return;
+        const item = getItem(Number(row.dataset.id));
+        const actionBtn = event.target.closest("[data-action]");
+        if (actionBtn) {
+          event.stopPropagation();
+          if (actionBtn.dataset.action === "pin") togglePin(item);
+          if (actionBtn.dataset.action === "remove") removeItem(item);
+          refocusSearch();
+          return;
+        }
+        state.selectedId = item.id;
+        render();
+        if (isMobile()) panel.classList.add("showPreview");
+        refocusSearch();
+      });
+
+      itemList.addEventListener("dblclick", (event) => {
+        const row = event.target.closest(".itemRow");
+        if (!row || event.target.closest("[data-action]") || isMobile()) return;
+        copyItem(getItem(Number(row.dataset.id)));
+      });
+
+      previewPane.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-action]");
+        if (!btn) return;
+        const item = getItem(state.selectedId);
+        const action = btn.dataset.action;
+        if (action === "copy") copyItem(item);
+        if (action === "pin") togglePin(item);
+        if (action === "remove") removeItem(item);
+        if (action === "open" && item) openExternal(item.content);
+        if (action === "closePreview") panel.classList.remove("showPreview");
+        if (action === "copyValue") {
+          writeToClipboard(btn.dataset.value);
+          showToast(`Copied ${btn.dataset.value}`);
+        }
+        refocusSearch();
+      });
+
+      document
+        .getElementById("aboutView")
+        .addEventListener("click", (event) => {
+          const linkRow = event.target.closest(".linkRow");
+          if (linkRow) openExternal(linkRow.dataset.url);
+        });
+
+      searchInput.addEventListener("input", () => {
+        state.query = searchInput.value;
+        state.selectedId = null;
+        render();
+        itemList.scrollTop = 0;
+      });
+
+      toastUndo.addEventListener("click", () => {
+        if (undoHandler) undoHandler();
+      });
+
+      headerClose.addEventListener("click", hidePanel);
+      aboutBtn.addEventListener("click", openAbout);
+      aboutBack.addEventListener("click", closeAbout);
+      clearBtn.addEventListener("click", openConfirm);
+      confirmCancel.addEventListener("click", closeConfirm);
+      confirmClear.addEventListener("click", clearHistory);
+
+      confirmLayer.addEventListener("click", (event) => {
+        if (event.target === confirmLayer) closeConfirm();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        // While the dialog is open, keys belong to its buttons
+        if (panel.classList.contains("showConfirm")) {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            closeConfirm();
+          }
+          return;
+        }
+
+        if (panel.classList.contains("showAbout")) {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            closeAbout();
+          }
+          return;
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          moveSelection(1);
+          return;
+        }
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          moveSelection(-1);
+          return;
+        }
+        if (event.key === "Enter") {
+          event.preventDefault();
+          copyItem(getItem(state.selectedId));
+          return;
+        }
+        if (event.key === "Tab") {
+          event.preventDefault();
+          cycleFilter(event.shiftKey ? -1 : 1);
+          return;
+        }
+        if (event.ctrlKey && event.key.toLowerCase() === "p") {
+          event.preventDefault();
+          togglePin(getItem(state.selectedId));
+          return;
+        }
+        if (event.key === "Delete" && searchInput.value === "") {
+          event.preventDefault();
+          removeItem(getItem(state.selectedId));
+          return;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          if (panel.classList.contains("showPreview"))
+            panel.classList.remove("showPreview");
+          else if (searchInput.value) {
+            searchInput.value = "";
+            state.query = "";
+            render();
+          } else hidePanel();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        if (!isMobile()) panel.classList.remove("showPreview");
+      });
+
+      document.querySelectorAll("[data-icon]").forEach((el) => {
+        el.innerHTML = iconSvg(el.dataset.icon);
+      });
+
+      renderLinkList(document.getElementById("projectLinks"), projectLinks);
+      renderLinkList(document.getElementById("makerLinks"), makerLinks);
+
+      setInterval(render, 30000);
+
+      // Drops file entries whose file was moved or deleted since it was copied
+      async function removeMissing() {
+        const removedIds = await window.__TAURI__.core.invoke(
+          "remove_missing_files",
+        );
+        if (!removedIds.length) return;
+        state.items = state.items.filter(
+          (item) => !removedIds.includes(item.id),
+        );
+        render();
+      }
+
+      // Every time the panel opens it starts fresh on the latest copy
+      function resetPanel() {
+        panel.classList.remove("showPreview", "showAbout", "showConfirm");
+        state.query = "";
+        state.filter = "all";
+        searchInput.value = "";
+        const latest = sortItems(state.items).find((item) => !item.pinned);
+        state.selectedId = latest ? latest.id : null;
+        render();
+        itemList.scrollTop = 0;
+        scrollSelectedIntoView();
+        refocusSearch();
+        removeMissing();
+      }
+
+      // Smart type detection for copies that arrive from the clipboard
+      function detectLang(text) {
+        if (
+          /^\s*(sudo|apt|git|npm|cd|ls|curl|ssh|wl-copy|wl-paste)\b/m.test(text)
+        )
+          return "Shell";
+        if (
+          /=>|[{}]|;\s*$|\b(const|let|var)\s+\w+\s*=|\bfunction\s*\w*\s*\(/m.test(
+            text,
+          )
+        )
+          return "JavaScript";
+        return null;
+      }
+
+      // Turns a saved clip from the database into an item the panel can show
+      function toItem(clip) {
+        const base = {
+          id: clip.id,
+          pinned: clip.pinned,
+          missing: false,
+          source: clip.sourceApp || "Unknown app",
+          time: clip.copiedAt,
+          clip,
+        };
+        const text = clip.content.trim();
+        if (clip.mimeType === "text/uri-list") {
+          const first =
+            text.split(/\r?\n/).find((line) => line && !line.startsWith("#")) ||
+            "";
+          if (first.startsWith("file://")) {
+            return Object.assign(base, {
+              type: "file",
+              content: decodeURIComponent(first.slice(7)),
+            });
+          }
+          return Object.assign(base, {
+            type: "link",
+            content: first,
+            title: "",
+          });
+        }
+        if (/^https?:\/\/\S+$/i.test(text)) {
+          return Object.assign(base, {
+            type: "link",
+            content: text,
+            title: "",
+          });
+        }
+        if (/^#(?:[0-9a-f]{3}){1,2}$/i.test(text)) {
+          const hex =
+            text.length === 4
+              ? "#" +
+                text
+                  .slice(1)
+                  .split("")
+                  .map((c) => c + c)
+                  .join("")
+              : text;
+          return Object.assign(base, {
+            type: "color",
+            content: hex.toUpperCase(),
+          });
+        }
+        const lang = detectLang(text);
+        if (lang)
+          return Object.assign(base, {
+            type: "code",
+            lang,
+            content: clip.content,
+          });
+        return Object.assign(base, { type: "text", content: clip.content });
+      }
+
+      // The database already merged duplicates, so match by id
+      function addIncomingClip(clip) {
+        const item = toItem(clip);
+        const index = state.items.findIndex(
+          (existing) => existing.id === item.id,
+        );
+        if (index === -1) state.items.push(item);
+        else state.items[index] = item;
+        render();
+      }
+
+      // Rust deleted this entry because its file was moved away
+      function removeIncomingClip(id) {
+        state.items = state.items.filter((item) => item.id !== id);
+        render();
+      }
+
+      window.__TAURI__.event.listen("panel-shown", resetPanel);
+      window.__TAURI__.event.listen("show-about", openAbout);
+      window.__TAURI__.event.listen("clip-added", (event) =>
+        addIncomingClip(event.payload),
+      );
+      window.__TAURI__.event.listen("clip-removed", (event) =>
+        removeIncomingClip(event.payload),
+      );
+
+      // Counts password copies the extension skipped this session
+      let skippedCount = 0;
+      window.__TAURI__.event.listen("clip-skipped", () => {
+        skippedCount += 1;
+        document.getElementById("privacyText").textContent =
+          `Skipped ${skippedCount} password ${skippedCount === 1 ? "copy" : "copies"}`;
+      });
+
+      async function loadHistory() {
+        const clips = await window.__TAURI__.core.invoke("list_clips");
+        state.items = clips.map(toItem);
+        resetPanel();
+      }
+
+      loadHistory();
+    </script>
+  </body>
+</html>
