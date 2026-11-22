@@ -568,12 +568,270 @@
         margin-top: 0.0625rem;
       }
 
+      /* Actions sit at the end so the toast, centered at the bottom, never covers them */
       .previewActions {
         margin-top: auto;
         padding-top: 0.5rem;
         display: flex;
         flex-wrap: wrap;
+        justify-content: flex-end;
         gap: 0.5rem;
+      }
+
+      /* File tree for file entries */
+      .treeCard {
+        flex: 1;
+        min-height: 12rem;
+        display: flex;
+        flex-direction: column;
+        border-radius: 0.875rem;
+        background: var(--fill1);
+        border: 1px solid var(--divider);
+        overflow: hidden;
+      }
+
+      .treeBar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.625rem 0.75rem 0.625rem 1rem;
+        border-bottom: 1px solid var(--divider);
+      }
+
+      .treeOrigin {
+        min-width: 0;
+      }
+
+      .treeOriginPath {
+        font-family: var(--fontMono);
+        font-size: 0.8125rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .treeSummary {
+        margin-top: 0.125rem;
+        font-size: 0.75rem;
+        color: var(--textTertiary);
+      }
+
+      .treeControls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+      }
+
+      .textBtn {
+        height: 1.875rem;
+        padding: 0 0.625rem;
+        border: none;
+        border-radius: 0.4375rem;
+        background: transparent;
+        color: var(--textSecondary);
+        font-family: var(--fontSans);
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.16s var(--ease), color 0.16s var(--ease);
+      }
+
+      .textBtn:hover {
+        background: var(--fill2);
+        color: var(--textPrimary);
+      }
+
+      .switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 1.875rem;
+        padding: 0 0.5rem 0 0.625rem;
+        border: none;
+        border-radius: 0.4375rem;
+        background: transparent;
+        color: var(--textSecondary);
+        font-family: var(--fontSans);
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .switch:hover {
+        background: var(--fill2);
+      }
+
+      .switchTrack {
+        position: relative;
+        width: 1.875rem;
+        height: 1.125rem;
+        border-radius: 999px;
+        background: var(--fill3);
+        transition: background 0.2s var(--ease);
+      }
+
+      .switchKnob {
+        position: absolute;
+        top: 0.125rem;
+        left: 0.125rem;
+        width: 0.875rem;
+        height: 0.875rem;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.85);
+        transition: transform 0.24s var(--ease), background 0.2s var(--ease);
+      }
+
+      .switch[aria-checked="true"] {
+        color: var(--textPrimary);
+      }
+
+      .switch[aria-checked="true"] .switchTrack {
+        background: var(--solidLight);
+      }
+
+      .switch[aria-checked="true"] .switchKnob {
+        transform: translateX(0.75rem);
+        background: #1c1c1f;
+      }
+
+      .treeList {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 0.375rem;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      }
+
+      .treeRow {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 2.125rem;
+        padding: 0.25rem 0.375rem 0.25rem calc(0.5rem + var(--depth) * 1.25rem);
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: background 0.16s var(--ease);
+      }
+
+      .treeRow:hover {
+        background: var(--fill1);
+      }
+
+      .treeChevron {
+        width: 1rem;
+        height: 1rem;
+        display: grid;
+        place-items: center;
+        font-size: 0.875rem;
+        color: var(--textTertiary);
+        transition: transform 0.2s var(--ease);
+      }
+
+      .treeRow.isOpen .treeChevron {
+        transform: rotate(90deg);
+      }
+
+      .treeIcon {
+        font-size: 1rem;
+        color: var(--textSecondary);
+      }
+
+      .treeName {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.8125rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .treeMeta {
+        font-size: 0.75rem;
+        color: var(--textTertiary);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .treeCopy {
+        width: 1.75rem;
+        height: 1.75rem;
+        display: grid;
+        place-items: center;
+        border: none;
+        border-radius: 0.4375rem;
+        background: transparent;
+        color: var(--textSecondary);
+        font-size: 0.9375rem;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.16s var(--ease), background 0.16s var(--ease);
+      }
+
+      .treeRow:hover .treeCopy,
+      .treeCopy:focus-visible {
+        opacity: 1;
+      }
+
+      .treeCopy:hover {
+        background: var(--fill2);
+        color: var(--textPrimary);
+      }
+
+      .isSelecting .treeCopy {
+        display: none;
+      }
+
+      .checkBox {
+        display: none;
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+        place-items: center;
+        border-radius: 0.3125rem;
+        border: 1.5px solid rgba(255, 255, 255, 0.35);
+        color: #1c1c1f;
+        font-size: 0.75rem;
+        transition: background 0.16s var(--ease), border-color 0.16s var(--ease);
+      }
+
+      .isSelecting .checkBox {
+        display: grid;
+      }
+
+      .checkBox .icon {
+        opacity: 0;
+      }
+
+      .checkBox.isChecked,
+      .checkBox.isPartial {
+        background: var(--solidLight);
+        border-color: var(--solidLight);
+      }
+
+      .checkBox.isChecked .icon {
+        opacity: 1;
+      }
+
+      .checkBox.isPartial .icon {
+        display: none;
+      }
+
+      .checkBox.isPartial::after {
+        content: "";
+        width: 0.5rem;
+        height: 0.125rem;
+        border-radius: 0.125rem;
+        background: #1c1c1f;
+      }
+
+      .treeEmpty {
+        padding: 2rem 1rem;
+        text-align: center;
+        font-size: 0.8125rem;
+        color: var(--textTertiary);
       }
 
       .btn {
@@ -664,19 +922,6 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-      }
-
-      .keyHints {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        white-space: nowrap;
-      }
-
-      .keyHints > span {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
       }
 
       .aboutBtn {
@@ -1082,7 +1327,8 @@
           display: grid;
         }
 
-        .keyHints {
+        /* Footer buttons show only their icons on small screens */
+        .footerActions .aboutBtn > span:last-child {
           display: none;
         }
 
@@ -1098,6 +1344,26 @@
 
         .toast {
           bottom: 3.5rem;
+        }
+
+        /* The preview fills the panel here, so the toast moves above its buttons */
+        .clipPanel.showPreview .toast {
+          bottom: 6.75rem;
+        }
+
+        .treeBar {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.5rem;
+        }
+
+        .treeControls {
+          justify-content: flex-end;
+        }
+
+        /* No hover on touch screens, so the per item copy stays visible */
+        .treeCopy {
+          opacity: 1;
         }
       }
 
@@ -1243,19 +1509,15 @@
           >
         </span>
         <span class="footerEnd">
-          <span class="keyHints">
-            <span><kbd>↑</kbd><kbd>↓</kbd> Move</span>
-            <span><kbd>Enter</kbd> Copy</span>
-            <span><kbd>Tab</kbd> Filter</span>
-            <span><kbd>Ctrl</kbd><kbd>P</kbd> Pin</span>
-            <span><kbd>Del</kbd> Remove</span>
-          </span>
           <span class="footerActions">
-            <button class="aboutBtn" id="clearBtn" type="button">
+            <button class="aboutBtn" id="clearBtn" type="button" aria-label="Clear history">
               <span data-icon="trash"></span><span>Clear</span>
             </button>
-            <button class="aboutBtn" id="aboutBtn" type="button">
+            <button class="aboutBtn" id="aboutBtn" type="button" aria-label="About">
               <span data-icon="info"></span><span>About</span>
+            </button>
+            <button class="aboutBtn" id="quitBtn" type="button" aria-label="Quit PookieClip">
+              <span data-icon="quit"></span><span>Quit</span>
             </button>
           </span>
         </span>
@@ -1451,6 +1713,9 @@
           "M12 8.4502V12.4502M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 15.4502V15.5502L11.9502 15.5498V15.4502H12.0498Z",
         info: "M12 11V16M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 8V8.1L11.9502 8.1002V8H12.0498Z",
         back: "M15 19L8 12L15 5",
+        quit: "M12 15L15 12M15 12L12 9M15 12H4M9 7.24859V7.2002C9 6.08009 9 5.51962 9.21799 5.0918C9.40973 4.71547 9.71547 4.40973 10.0918 4.21799C10.5196 4 11.0801 4 12.2002 4H16.8002C17.9203 4 18.4796 4 18.9074 4.21799C19.2837 4.40973 19.5905 4.71547 19.7822 5.0918C20 5.5192 20 6.07899 20 7.19691V16.8036C20 17.9215 20 18.4805 19.7822 18.9079C19.5905 19.2842 19.2837 19.5905 18.9074 19.7822C18.48 20 17.921 20 16.8031 20H12.1969C11.079 20 10.5192 20 10.0918 19.7822C9.71547 19.5905 9.40973 19.2839 9.21799 18.9076C9 18.4798 9 17.9201 9 16.8V16.75",
+        chevron: "M9 5L16 12L9 19",
+        check: "M6 12L10.2426 16.2426L18.727 7.75732",
         external:
           "M10.0002 5H8.2002C7.08009 5 6.51962 5 6.0918 5.21799C5.71547 5.40973 5.40973 5.71547 5.21799 6.0918C5 6.51962 5 7.08009 5 8.2002V15.8002C5 16.9203 5 17.4801 5.21799 17.9079C5.40973 18.2842 5.71547 18.5905 6.0918 18.7822C6.5192 19 7.07899 19 8.19691 19H15.8031C16.921 19 17.48 19 17.9074 18.7822C18.2837 18.5905 18.5905 18.2839 18.7822 17.9076C19 17.4802 19 16.921 19 15.8031V14M20 9V4M20 4H15M20 4L13 11",
       };
@@ -1641,6 +1906,7 @@
         query: "",
         selectedId: null,
         lastRemoved: null,
+        tree: emptyTree(),
       };
 
       const panel = document.getElementById("clipPanel");
@@ -1800,6 +2066,8 @@
           );
         if (item.type === "color") return item.content.toUpperCase();
         if (item.type === "image") return item.label;
+        if (item.paths && item.paths.length > 1)
+          return `${baseName(item.paths[0])} and ${item.paths.length - 1} more`;
         return baseName(item.content);
       }
 
@@ -1809,7 +2077,10 @@
         if (item.type === "code") detail = item.lang || "Code";
         if (item.type === "image") detail = `${item.width} × ${item.height}`;
         if (item.type === "file" || item.type === "folder")
-          detail = parentPath(item.content);
+          detail =
+            item.paths && item.paths.length > 1
+              ? `${item.paths.length} items · ${parentPath(item.content)}`
+              : parentPath(item.content);
         if (item.missing) detail = "Missing";
         return `${detail} · ${item.source} · ${relTime(item.time)}`;
       }
@@ -1819,7 +2090,11 @@
           return `<div class="rowTile isSwatch" style="background:${escapeHtml(item.content)}"></div>`;
         if (item.type === "image")
           return `<div class="rowTile isImage" style="background-image:${item.art}"></div>`;
-        const icon = item.missing ? "warning" : typeMeta[item.type].icon;
+        const icon = item.missing
+          ? "warning"
+          : item.paths && item.paths.length > 1
+            ? "folder"
+            : typeMeta[item.type].icon;
         return `<div class="rowTile">${iconSvg(icon)}</div>`;
       }
 
@@ -2021,11 +2296,250 @@
         if (item.type === "image") {
           return `<div class="imageFrame" style="background-image:${item.art}"></div><div class="previewStats">${escapeHtml(item.label)}, ${item.width} × ${item.height}, ${item.format}, ${item.size}</div>`;
         }
+        if (item.type === "file") return fileTreeHtml(item);
         const icon = item.missing ? "warning" : typeMeta[item.type].icon;
         const notice = item.missing
           ? `<div class="noticeRow">${iconSvg("warning")}<span>This ${item.type} was moved or deleted, so it can't be pasted anymore.</span></div>`
           : `<div class="noticeRow">${iconSvg(item.type === "folder" ? "folder" : "file")}<span>Copied as a ${item.type} reference. Pasting it in a file manager copies the actual ${item.type}.</span></div>`;
         return `<div class="fileHead"><div class="fileTile">${iconSvg(icon)}</div><div><div class="fileName">${escapeHtml(baseName(item.content))}</div><div class="filePath">${escapeHtml(item.content)}</div></div></div>${notice}`;
+      }
+
+      // Tree view state for the selected file entry, reloaded whenever the entry changes
+      function emptyTree() {
+        return {
+          id: null,
+          data: null,
+          expanded: new Set(),
+          selecting: false,
+          checked: new Set(),
+        };
+      }
+
+      function loadTree(item) {
+        state.tree = emptyTree();
+        state.tree.id = item.id;
+        window.__TAURI__.core
+          .invoke("file_tree", { id: item.id })
+          .then((data) => {
+            if (state.tree.id !== item.id) return;
+            state.tree.data = data;
+            render();
+          });
+      }
+
+      function formatSize(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+        if (bytes < 1024 * 1024 * 1024)
+          return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+        return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+      }
+
+      function treeFileCount(nodes) {
+        return nodes.reduce(
+          (sum, node) => sum + (node.isDir ? treeFileCount(node.children) : 1),
+          0,
+        );
+      }
+
+      function treeFolders(nodes) {
+        return nodes
+          .filter((node) => node.isDir)
+          .flatMap((node) => [node, ...treeFolders(node.children)]);
+      }
+
+      // Leaves are files and empty folders, the things a checkbox really stands for
+      function treeLeaves(node) {
+        if (!node.isDir || !node.children.length) return [node];
+        return node.children.flatMap(treeLeaves);
+      }
+
+      function treeCheckState(node) {
+        const leaves = treeLeaves(node);
+        const checkedCount = leaves.filter((leaf) =>
+          state.tree.checked.has(leaf.path),
+        ).length;
+        if (checkedCount === 0) return "none";
+        return checkedCount === leaves.length ? "all" : "some";
+      }
+
+      // A fully checked folder is copied as the folder itself, not as its loose files
+      function resolveTreeSelection(nodes) {
+        return nodes.flatMap((node) => {
+          const nodeState = treeCheckState(node);
+          if (nodeState === "all") return [node];
+          if (nodeState === "some") return resolveTreeSelection(node.children);
+          return [];
+        });
+      }
+
+      function treeSelection(item) {
+        if (
+          state.tree.id !== item.id ||
+          !state.tree.selecting ||
+          !state.tree.data
+        )
+          return [];
+        return resolveTreeSelection(state.tree.data.roots);
+      }
+
+      function toggleTreeCheck(node) {
+        const turnOn = treeCheckState(node) !== "all";
+        treeLeaves(node).forEach((leaf) => {
+          if (turnOn) state.tree.checked.add(leaf.path);
+          else state.tree.checked.delete(leaf.path);
+        });
+      }
+
+      function findTreeNode(nodes, path) {
+        for (const node of nodes) {
+          if (node.path === path) return node;
+          if (node.isDir) {
+            const found = findTreeNode(node.children, path);
+            if (found) return found;
+          }
+        }
+        return null;
+      }
+
+      function treeRowsHtml(nodes, depth) {
+        return nodes
+          .map((node) => {
+            const open = node.isDir && state.tree.expanded.has(node.path);
+            const nodeState = treeCheckState(node);
+            const checkClass =
+              nodeState === "all" ? "isChecked" : nodeState === "some" ? "isPartial" : "";
+            const ariaChecked =
+              nodeState === "all" ? "true" : nodeState === "some" ? "mixed" : "false";
+            const count = node.isDir ? treeFileCount(node.children) : 0;
+            const meta = node.isDir
+              ? `${count} ${count === 1 ? "file" : "files"}`
+              : formatSize(node.size);
+            const row = `
+        <div class="treeRow ${open ? "isOpen" : ""}" style="--depth:${depth}" data-path="${escapeHtml(node.path)}" role="treeitem" ${node.isDir ? `aria-expanded="${open}"` : ""}>
+          <span class="checkBox ${checkClass}" role="checkbox" aria-checked="${ariaChecked}">${iconSvg("check")}</span>
+          <span class="treeChevron">${node.isDir && node.children.length ? iconSvg("chevron") : ""}</span>
+          <span class="treeIcon">${iconSvg(node.isDir ? "folder" : "file")}</span>
+          <span class="treeName">${escapeHtml(node.name)}</span>
+          <span class="treeMeta">${meta}</span>
+          <button class="treeCopy" type="button" data-copy="${escapeHtml(node.path)}" aria-label="Copy ${escapeHtml(node.name)}">${iconSvg("copy")}</button>
+        </div>`;
+            return row + (open ? treeRowsHtml(node.children, depth + 1) : "");
+          })
+          .join("");
+      }
+
+      function fileTreeHtml(item) {
+        if (state.tree.id !== item.id) loadTree(item);
+        const data = state.tree.data;
+        if (!data)
+          return '<div class="treeCard"><div class="treeEmpty">Loading files</div></div>';
+        const roots = data.roots;
+        if (!roots.length)
+          return '<div class="treeCard"><div class="treeEmpty">These files are no longer available.</div></div>';
+
+        const folders = treeFolders(roots);
+        const allOpen =
+          folders.length > 0 &&
+          folders.every((folder) => state.tree.expanded.has(folder.path));
+        const files = treeFileCount(roots);
+        const size = roots.reduce((sum, node) => sum + node.size, 0);
+        let summary = `${roots.length} ${roots.length === 1 ? "item" : "items"}, ${files} ${files === 1 ? "file" : "files"}, ${formatSize(size)}`;
+        if (!data.stored) summary += ", from the original locations";
+        if (data.truncated) summary += ", showing the first 5,000";
+
+        return `
+      <div class="treeCard ${state.tree.selecting ? "isSelecting" : ""}">
+        <div class="treeBar">
+          <div class="treeOrigin">
+            <div class="treeOriginPath">${escapeHtml(data.origin)}</div>
+            <div class="treeSummary">${summary}</div>
+          </div>
+          <div class="treeControls">
+            ${folders.length ? `<button class="textBtn" type="button" data-tree-action="toggleExpandAll">${allOpen ? "Collapse all" : "Expand all"}</button>` : ""}
+            <button class="switch" type="button" role="switch" aria-checked="${state.tree.selecting}" data-tree-action="toggleSelect">
+              <span>Select</span><span class="switchTrack"><span class="switchKnob"></span></span>
+            </button>
+          </div>
+        </div>
+        <div class="treeList" role="tree" aria-multiselectable="${state.tree.selecting}">${treeRowsHtml(roots, 0)}</div>
+      </div>`;
+      }
+
+      function fileActionsHtml(item) {
+        if (state.tree.id === item.id && state.tree.selecting && state.tree.data) {
+          const count = treeSelection(item).length;
+          const allChecked =
+            treeCheckState({ isDir: true, children: state.tree.data.roots }) === "all";
+          return `<button class="btn btnPrimary" type="button" data-tree-action="copySelected" ${count ? "" : "disabled"}>${iconSvg("copy")}<span>${count ? `Copy ${count} selected` : "Copy selected"}</span></button>
+        <button class="btn btnSecondary" type="button" data-tree-action="selectAll">${allChecked ? "Clear selection" : "Select all"}</button>`;
+        }
+        return `<button class="btn btnPrimary" type="button" data-action="copy">${iconSvg("copy")}<span>Copy all</span><kbd>Enter</kbd></button>`;
+      }
+
+      // Copies chosen files from the tree, then leaves select mode and hides the panel
+      function copyPaths(paths) {
+        window.__TAURI__.core.invoke("copy_paths", { paths });
+        state.tree.selecting = false;
+        state.tree.checked.clear();
+        hidePanel();
+      }
+
+      // Clicks inside the file tree, returns true when the click was handled here
+      function handleTreeClick(event) {
+        const item = getItem(state.selectedId);
+        if (!item || item.type !== "file" || !state.tree.data) return false;
+        const roots = state.tree.data.roots;
+
+        const copyBtn = event.target.closest("[data-copy]");
+        if (copyBtn) {
+          copyPaths([copyBtn.dataset.copy]);
+          return true;
+        }
+
+        const actionBtn = event.target.closest("[data-tree-action]");
+        if (actionBtn) {
+          const action = actionBtn.dataset.treeAction;
+          if (action === "copySelected") {
+            copyPaths(treeSelection(item).map((node) => node.path));
+            return true;
+          }
+          if (action === "toggleSelect") {
+            state.tree.selecting = !state.tree.selecting;
+            state.tree.checked.clear();
+          }
+          if (action === "selectAll")
+            toggleTreeCheck({ isDir: true, children: roots });
+          if (action === "toggleExpandAll") {
+            const folders = treeFolders(roots);
+            const allOpen = folders.every((folder) =>
+              state.tree.expanded.has(folder.path),
+            );
+            folders.forEach((folder) => {
+              if (allOpen) state.tree.expanded.delete(folder.path);
+              else state.tree.expanded.add(folder.path);
+            });
+          }
+          render();
+          refocusSearch();
+          return true;
+        }
+
+        // A row click checks it while selecting, otherwise it opens or closes a folder
+        const row = event.target.closest(".treeRow");
+        if (!row) return false;
+        const node = findTreeNode(roots, row.dataset.path);
+        if (!node) return true;
+        const onChevron = event.target.closest(".treeChevron");
+        if (state.tree.selecting && !onChevron) {
+          toggleTreeCheck(node);
+        } else if (node.isDir) {
+          if (state.tree.expanded.has(node.path)) state.tree.expanded.delete(node.path);
+          else state.tree.expanded.add(node.path);
+        }
+        render();
+        refocusSearch();
+        return true;
       }
 
       function renderPreview(item) {
@@ -2035,6 +2549,12 @@
           return;
         }
         const pinLabel = item.pinned ? "Unpin" : "Pin";
+        const oldTreeList = previewPane.querySelector(".treeList");
+        const keepScroll =
+          oldTreeList && previewPane.dataset.itemId === String(item.id)
+            ? oldTreeList.scrollTop
+            : 0;
+        previewPane.dataset.itemId = item.id;
         previewPane.innerHTML = `
       <div class="previewHead">
         <div>
@@ -2045,11 +2565,13 @@
       </div>
       ${previewBodyHtml(item)}
       <div class="previewActions">
-        <button class="btn btnPrimary" type="button" data-action="copy" ${item.missing ? "disabled" : ""}>${iconSvg("copy")}<span>Copy</span><kbd>Enter</kbd></button>
+        ${item.type === "file" ? fileActionsHtml(item) : `<button class="btn btnPrimary" type="button" data-action="copy" ${item.missing ? "disabled" : ""}>${iconSvg("copy")}<span>Copy</span><kbd>Enter</kbd></button>`}
         ${item.type === "link" ? `<button class="btn btnSecondary" type="button" data-action="open">${iconSvg("external")}<span>Open</span></button>` : ""}
         <button class="btn btnSecondary ${item.pinned ? "isPinned" : ""}" type="button" data-action="pin">${iconSvg("pin", "pinIcon")}<span>${pinLabel}</span></button>
         <button class="btn btnSecondary" type="button" data-action="remove">${iconSvg("trash")}<span>Remove</span></button>
       </div>`;
+        const newTreeList = previewPane.querySelector(".treeList");
+        if (newTreeList) newTreeList.scrollTop = keepScroll;
       }
 
       function renderLinkList(container, links) {
@@ -2124,9 +2646,16 @@
           return;
         }
 
+        if (item.type === "file" && state.tree.id === item.id && state.tree.selecting) {
+          const selection = treeSelection(item);
+          if (selection.length) copyPaths(selection.map((node) => node.path));
+          return;
+        }
+
+        // Files are copied from PookieClip's own saved copies once they exist
         window.__TAURI__.core.invoke("copy_clip", {
           mimeType: item.clip.mimeType,
-          content: item.clip.content,
+          content: item.clip.stored || item.clip.content,
         });
 
         if (!item.pinned) item.time = Date.now();
@@ -2283,6 +2812,7 @@
       });
 
       previewPane.addEventListener("click", (event) => {
+        if (handleTreeClick(event)) return;
         const btn = event.target.closest("[data-action]");
         if (!btn) return;
         const item = getItem(state.selectedId);
@@ -2321,6 +2851,9 @@
       aboutBtn.addEventListener("click", openAbout);
       aboutBack.addEventListener("click", closeAbout);
       clearBtn.addEventListener("click", openConfirm);
+      document
+        .getElementById("quitBtn")
+        .addEventListener("click", () => window.__TAURI__.core.invoke("quit_app"));
       confirmCancel.addEventListener("click", closeConfirm);
       confirmClear.addEventListener("click", clearHistory);
 
@@ -2378,7 +2911,11 @@
         }
         if (event.key === "Escape") {
           event.preventDefault();
-          if (panel.classList.contains("showPreview"))
+          if (state.tree.selecting) {
+            state.tree.selecting = false;
+            state.tree.checked.clear();
+            render();
+          } else if (panel.classList.contains("showPreview"))
             panel.classList.remove("showPreview");
           else if (searchInput.value) {
             searchInput.value = "";
@@ -2401,21 +2938,10 @@
 
       setInterval(render, 30000);
 
-      // Drops file entries whose file was moved or deleted since it was copied
-      async function removeMissing() {
-        const removedIds = await window.__TAURI__.core.invoke(
-          "remove_missing_files",
-        );
-        if (!removedIds.length) return;
-        state.items = state.items.filter(
-          (item) => !removedIds.includes(item.id),
-        );
-        render();
-      }
-
       // Every time the panel opens it starts fresh on the latest copy
       function resetPanel() {
         panel.classList.remove("showPreview", "showAbout", "showConfirm");
+        state.tree = emptyTree();
         state.query = "";
         state.filter = "all";
         searchInput.value = "";
@@ -2425,7 +2951,6 @@
         itemList.scrollTop = 0;
         scrollSelectedIntoView();
         refocusSearch();
-        removeMissing();
       }
 
       // Smart type detection for copies that arrive from the clipboard
@@ -2455,13 +2980,19 @@
         };
         const text = clip.content.trim();
         if (clip.mimeType === "text/uri-list") {
-          const first =
-            text.split(/\r?\n/).find((line) => line && !line.startsWith("#")) ||
-            "";
+          const lines = text
+            .split(/\r?\n/)
+            .filter((line) => line && !line.startsWith("#"));
+          const first = lines[0] || "";
           if (first.startsWith("file://")) {
+            const paths = lines
+              .filter((line) => line.startsWith("file://"))
+              .map((line) => decodeURIComponent(line.slice(7)));
             return Object.assign(base, {
               type: "file",
-              content: decodeURIComponent(first.slice(7)),
+              content: paths[0],
+              paths,
+              label: paths.join("\n"),
             });
           }
           return Object.assign(base, {
@@ -2513,19 +3044,13 @@
         render();
       }
 
-      // Rust deleted this entry because its file was moved away
-      function removeIncomingClip(id) {
-        state.items = state.items.filter((item) => item.id !== id);
-        render();
-      }
-
       window.__TAURI__.event.listen("panel-shown", resetPanel);
-      window.__TAURI__.event.listen("show-about", openAbout);
+      window.__TAURI__.event.listen("clip-updated", (event) => {
+        if (state.tree.id === event.payload.id) state.tree = emptyTree();
+        addIncomingClip(event.payload);
+      });
       window.__TAURI__.event.listen("clip-added", (event) =>
         addIncomingClip(event.payload),
-      );
-      window.__TAURI__.event.listen("clip-removed", (event) =>
-        removeIncomingClip(event.payload),
       );
 
       // Counts password copies the extension skipped this session

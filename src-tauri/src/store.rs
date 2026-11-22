@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 const MAX_AGE_MS: i64 = 30 * 24 * 60 * 60 * 1000;
 const MAX_ITEMS: i64 = 1000;
 
-const COLUMNS: &str = "id, mime_type, content, source_app, pinned, copied_at";
+const COLUMNS: &str = "id, mime_type, content, source_app, pinned, copied_at, stored, stored_bytes";
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,6 +20,9 @@ pub struct Clip {
     pub source_app: String,
     pub pinned: bool,
     pub copied_at: i64,
+    // File list pointing at PookieClip's own copies, once they are saved
+    pub stored: Option<String>,
+    pub stored_bytes: i64,
 }
 
 pub struct Store {
@@ -41,6 +44,8 @@ fn clip_from_row(row: &Row) -> rusqlite::Result<Clip> {
         source_app: row.get(3)?,
         pinned: row.get(4)?,
         copied_at: row.get(5)?,
+        stored: row.get(6)?,
+        stored_bytes: row.get(7)?,
     })
 }
 
@@ -58,6 +63,16 @@ impl Store {
                  copied_at INTEGER NOT NULL
              );",
         )?;
+        // Databases from before stored copies existed get the new columns added once
+        let has_stored = connection
+            .prepare("SELECT 1 FROM pragma_table_info('clips') WHERE name = 'stored'")?
+            .exists([])?;
+        if !has_stored {
+            connection.execute_batch(
+                "ALTER TABLE clips ADD COLUMN stored TEXT;
+                 ALTER TABLE clips ADD COLUMN stored_bytes INTEGER NOT NULL DEFAULT 0;",
+            )?;
+        }
         let store = Store {
             connection: Mutex::new(connection),
         };
@@ -92,6 +107,18 @@ impl Store {
         clips
     }
 
+    pub fn get(&self, id: i64) -> rusqlite::Result<Option<Clip>> {
+        self.connection
+            .lock()
+            .unwrap()
+            .query_row(
+                &format!("SELECT {COLUMNS} FROM clips WHERE id = ?1"),
+                params![id],
+                clip_from_row,
+            )
+            .optional()
+    }
+
     // Finds the entry holding exactly this content, if there is one
     pub fn find_id(&self, content: &str) -> rusqlite::Result<Option<i64>> {
         self.connection
@@ -99,6 +126,69 @@ impl Store {
             .unwrap()
             .query_row("SELECT id FROM clips WHERE content = ?1", params![content], |row| row.get(0))
             .optional()
+    }
+
+    // Records where an entry's own copies were saved and how much space they take
+    pub fn set_stored(&self, id: i64, stored: &str, stored_bytes: i64) -> rusqlite::Result<Option<Clip>> {
+        self.connection
+            .lock()
+            .unwrap()
+            .query_row(
+                &format!("UPDATE clips SET stored = ?1, stored_bytes = ?2 WHERE id = ?3 RETURNING {COLUMNS}"),
+                params![stored, stored_bytes, id],
+                clip_from_row,
+            )
+            .optional()
+    }
+
+    // Copying from PookieClip's own stored files moves that entry to the top, like a fresh copy
+    pub fn touch_stored(&self, stored: &str) -> rusqlite::Result<Option<Clip>> {
+        self.connection
+            .lock()
+            .unwrap()
+            .query_row(
+                &format!(
+                    "UPDATE clips SET copied_at = CASE WHEN pinned = 1 THEN copied_at ELSE ?1 END
+                     WHERE stored = ?2 RETURNING {COLUMNS}"
+                ),
+                params![now_ms(), stored],
+                clip_from_row,
+            )
+            .optional()
+    }
+
+    // Every stored file list still in use, so unused copies can be deleted from disk
+    pub fn stored_lists(&self) -> rusqlite::Result<Vec<String>> {
+        let connection = self.connection.lock().unwrap();
+        let mut statement = connection.prepare("SELECT stored FROM clips WHERE stored IS NOT NULL")?;
+        let lists = statement.query_map([], |row| row.get(0))?.collect();
+        lists
+    }
+
+    // Drops the oldest unpinned stored copies until the total fits in `allowed` bytes.
+    // Pinned copies are never dropped, so pinned files alone can go over the limit.
+    pub fn make_room(&self, allowed: i64) -> rusqlite::Result<()> {
+        let connection = self.connection.lock().unwrap();
+        loop {
+            let used: i64 = connection.query_row(
+                "SELECT COALESCE(SUM(stored_bytes), 0) FROM clips WHERE stored IS NOT NULL",
+                [],
+                |row| row.get(0),
+            )?;
+            if used <= allowed {
+                return Ok(());
+            }
+            let dropped = connection.execute(
+                "UPDATE clips SET stored = NULL, stored_bytes = 0 WHERE id = (
+                     SELECT id FROM clips WHERE stored IS NOT NULL AND pinned = 0
+                     ORDER BY copied_at ASC LIMIT 1
+                 )",
+                [],
+            )?;
+            if dropped == 0 {
+                return Ok(());
+            }
+        }
     }
 
     pub fn set_pinned(&self, id: i64, pinned: bool) -> rusqlite::Result<()> {
@@ -131,8 +221,17 @@ impl Store {
         let transaction = connection.transaction()?;
         for clip in clips {
             transaction.execute(
-                &format!("INSERT OR IGNORE INTO clips ({COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6)"),
-                params![clip.id, clip.mime_type, clip.content, clip.source_app, clip.pinned, clip.copied_at],
+                &format!("INSERT OR IGNORE INTO clips ({COLUMNS}) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)"),
+                params![
+                    clip.id,
+                    clip.mime_type,
+                    clip.content,
+                    clip.source_app,
+                    clip.pinned,
+                    clip.copied_at,
+                    clip.stored,
+                    clip.stored_bytes
+                ],
             )?;
         }
         transaction.commit()

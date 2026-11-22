@@ -3,6 +3,7 @@ use gtk::prelude::*;
 use tauri::{AppHandle, Emitter, Manager};
 use zbus::{connection, interface};
 
+use crate::file_store::{self, FileStore};
 use crate::store::Store;
 
 const BUS_NAME: &str = "io.github.gracepetermutiibwa.PookieClip";
@@ -64,19 +65,6 @@ fn normalize(mime_type: &str, content: &str, store: &Store) -> (String, String) 
     (mime_type.to_string(), content.to_string())
 }
 
-// True when a file reference points only at files that no longer exist, as after a move
-fn files_gone(mime_type: &str, content: &str) -> bool {
-    if mime_type != "text/uri-list" {
-        return false;
-    }
-    let paths: Vec<_> = content
-        .lines()
-        .filter(|uri| uri.starts_with("file://"))
-        .filter_map(|uri| File::for_uri(uri).path())
-        .collect();
-    !paths.is_empty() && !paths.iter().any(|path| path.exists())
-}
-
 struct ClipBus {
     app: AppHandle,
 }
@@ -98,21 +86,24 @@ impl ClipBus {
         let store = self.app.state::<Store>();
         let (mime_type, content) = normalize(&mime_type, &raw, &store);
 
-        // A file that was moved away: drop its old entry instead of saving it again
-        if files_gone(&mime_type, &content) {
-            if let Ok(Some(id)) = store.find_id(&content) {
-                match store.remove(id) {
-                    Ok(()) => {
-                        let _ = self.app.emit("clip-removed", id);
-                    }
-                    Err(error) => log::error!("could not remove a moved file entry: {error}"),
+        // Copies made from PookieClip's own stored files are re-copies of an entry, not new history
+        if mime_type == "text/uri-list" {
+            let files_dir = &self.app.state::<FileStore>().dir;
+            let paths = file_store::paths_from_uris(&content);
+            if !paths.is_empty() && paths.iter().all(|path| path.starts_with(files_dir)) {
+                if let Ok(Some(clip)) = store.touch_stored(&content) {
+                    let _ = self.app.emit("clip-added", clip);
                 }
+                return;
             }
-            return;
         }
 
         match store.add(&mime_type, &content, &source_app) {
             Ok(clip) => {
+                // New file entries get their own copies saved, repeats already have them
+                if clip.mime_type == "text/uri-list" && clip.stored.is_none() {
+                    file_store::store_copies(self.app.clone(), clip.id, clip.content.clone());
+                }
                 let _ = self.app.emit("clip-added", clip);
             }
             Err(error) => log::error!("could not save a clip: {error}"),
@@ -121,6 +112,11 @@ impl ClipBus {
 
     fn add_skipped(&self) {
         let _ = self.app.emit("clip-skipped", ());
+    }
+
+    // Called when the GNOME extension's top bar icon is clicked
+    fn toggle(&self) {
+        crate::toggle_panel(&self.app);
     }
 }
 
@@ -131,3 +127,4 @@ pub async fn start(app: AppHandle) -> zbus::Result<connection::Connection> {
         .build()
         .await
 }
+
