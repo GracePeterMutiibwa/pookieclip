@@ -4,6 +4,15 @@ use gtk::{gdk, Clipboard, TargetEntry, TargetFlags};
 
 // Every format offered for a clip, so each app can paste the kind it understands
 fn formats_for(mime_type: &str, content: &str) -> Vec<(String, Vec<u8>)> {
+    // For images the content is the stored file, offered as the same bytes that were copied
+    if mime_type.starts_with("image/") {
+        let data = File::for_uri(content.trim())
+            .path()
+            .and_then(|path| std::fs::read(path).ok())
+            .unwrap_or_default();
+        return vec![(mime_type.to_string(), data)];
+    }
+
     if mime_type == "text/uri-list" {
         let uris: Vec<&str> = content
             .lines()

@@ -1,0 +1,105 @@
+# Builds PookieClip when a version tag like v0.1.1 is pushed, attaches the packages
+# to a GitHub release and publishes the signed apt repository on GitHub Pages.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # The oldest supported runner, so the app runs on Ubuntu 22.04 and newer
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the app version
+        run: |
+          appVersion=$(jq -r .version src-tauri/tauri.conf.json)
+          if [ "v$appVersion" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match version $appVersion in tauri.conf.json"
+            exit 1
+          fi
+          echo "VERSION=$appVersion" >> "$GITHUB_ENV"
+
+      - name: Install build libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential file libxdo-dev libssl-dev librsvg2-dev dpkg-dev apt-utils
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install the Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Build the packages
+        run: cargo tauri build
+
+      # Tauri names the package pookie-clip, users install it as pookieclip
+      - name: Rename the deb package
+        run: |
+          built=src-tauri/target/release/bundle/deb/PookieClip_${VERSION}_amd64.deb
+          dpkg-deb -R "$built" debRoot
+          sed -i 's/^Package: pookie-clip$/Package: pookieclip\nConflicts: pookie-clip\nReplaces: pookie-clip/' debRoot/DEBIAN/control
+          grep -q '^Package: pookieclip$' debRoot/DEBIAN/control
+          mkdir -p dist
+          dpkg-deb --root-owner-group -b debRoot "dist/pookieclip_${VERSION}_amd64.deb"
+          cp src-tauri/target/release/bundle/rpm/PookieClip-${VERSION}-1.x86_64.rpm dist/
+
+      - name: Attach the packages to the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: PookieClip ${{ env.VERSION }}
+          files: dist/*
+
+      - name: Build the signed apt repository
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          echo "$APT_SIGNING_KEY" | gpg --batch --import
+          keyId=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/ {print $10; exit}')
+
+          mkdir -p aptRepo/pool/main/p/pookieclip aptRepo/dists/stable/main/binary-amd64
+          cp dist/pookieclip_${VERSION}_amd64.deb aptRepo/pool/main/p/pookieclip/
+          cd aptRepo
+          dpkg-scanpackages --arch amd64 pool/ > dists/stable/main/binary-amd64/Packages
+          gzip -k9 dists/stable/main/binary-amd64/Packages
+          apt-ftparchive \
+            -o APT::FTPArchive::Release::Origin=PookieClip \
+            -o APT::FTPArchive::Release::Label=PookieClip \
+            -o APT::FTPArchive::Release::Suite=stable \
+            -o APT::FTPArchive::Release::Codename=stable \
+            -o APT::FTPArchive::Release::Architectures=amd64 \
+            -o APT::FTPArchive::Release::Components=main \
+            release dists/stable > dists/stable/Release
+          gpg --batch --yes --local-user "$keyId" --armor --detach-sign -o dists/stable/Release.gpg dists/stable/Release
+          gpg --batch --yes --local-user "$keyId" --clearsign -o dists/stable/InRelease dists/stable/Release
+          gpg --armor --export "$keyId" > key.gpg
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: aptRepo
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

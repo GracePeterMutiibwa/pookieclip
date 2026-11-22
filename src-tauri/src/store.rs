@@ -178,15 +178,25 @@ impl Store {
             if used <= allowed {
                 return Ok(());
             }
-            let dropped = connection.execute(
-                "UPDATE clips SET stored = NULL, stored_bytes = 0 WHERE id = (
-                     SELECT id FROM clips WHERE stored IS NOT NULL AND pinned = 0
-                     ORDER BY copied_at ASC LIMIT 1
-                 )",
-                [],
-            )?;
-            if dropped == 0 {
+            let oldest: Option<(i64, String)> = connection
+                .query_row(
+                    "SELECT id, mime_type FROM clips WHERE stored IS NOT NULL AND pinned = 0
+                     ORDER BY copied_at ASC LIMIT 1",
+                    [],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )
+                .optional()?;
+            let Some((id, mime_type)) = oldest else {
                 return Ok(());
+            };
+            // A file entry still points at the originals, an image has nothing else to paste
+            if mime_type.starts_with("image/") {
+                connection.execute("DELETE FROM clips WHERE id = ?1", params![id])?;
+            } else {
+                connection.execute(
+                    "UPDATE clips SET stored = NULL, stored_bytes = 0 WHERE id = ?1",
+                    params![id],
+                )?;
             }
         }
     }

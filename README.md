@@ -1,16 +1,17 @@
 # PookieClip
 
-A private clipboard history for Linux. PookieClip keeps everything you copy on your own machine, so you can find it and copy it again later: text, links, code, colors and files.
+A private clipboard history for Linux. PookieClip keeps everything you copy on your own machine, so you can find it and copy it again later: text, links, code, colors, images and files.
 
 It is built as a better GPaste. Copied files are saved as PookieClip's own copies, so an entry still pastes long after the original was moved, renamed or deleted.
 
 ## Features
 
-- Search your history and filter it by type: text, links, code, colors and files
+- Search your history and filter it by type: text, links, code, colors, images and files
+- Copied images and screenshots are saved with a preview, and paste back as the same image
 - Click an entry, or press Enter, to put it back on the clipboard
 - Pin entries you want to keep. Pinned entries are never removed automatically
 - Copied files and folders show as a tree. Copy everything, one file, or a selection
-- PookieClip keeps its own copies of copied files, up to 10 GB, so they still paste after the originals are gone. The oldest unpinned copies are dropped first when space runs out
+- PookieClip keeps its own copies of copied files and images, up to 10 GB, so they still paste after the originals are gone. The oldest unpinned copies are dropped first when space runs out
 - Copies made by password managers are skipped and never saved
 - Undo after removing an entry or clearing the history
 - Open and hide the panel from the top bar icon or with **Ctrl+Alt+H**
@@ -35,18 +36,29 @@ On Wayland, apps are not allowed to read the clipboard. PookieClip ships a small
 
 ## Install
 
-Download the package for your system from the [Releases](https://github.com/GracePeterMutiibwa/pookieclip/releases) page.
+**Ubuntu 22.04 and newer, Debian 12 and newer**
 
-**Ubuntu and Debian**
+Add the PookieClip apt repository once:
 
 ```
-sudo apt install ./PookieClip_0.1.0_amd64.deb
+curl -fsSL https://gracepetermutiibwa.github.io/pookieclip/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/pookieclip.gpg
+echo "deb [signed-by=/usr/share/keyrings/pookieclip.gpg] https://gracepetermutiibwa.github.io/pookieclip stable main" | sudo tee /etc/apt/sources.list.d/pookieclip.list
 ```
+
+Then install it:
+
+```
+sudo apt update && sudo apt install pookieclip
+```
+
+New versions arrive with `sudo apt upgrade`.
 
 **Fedora**
 
+Download the `.rpm` from the [Releases](https://github.com/GracePeterMutiibwa/pookieclip/releases) page, then:
+
 ```
-sudo dnf install ./PookieClip-0.1.0-1.x86_64.rpm
+sudo dnf install ./PookieClip-*.x86_64.rpm
 ```
 
 Then:
@@ -67,7 +79,13 @@ gsettings --schemadir /usr/share/gnome-shell/extensions/pookieclip@gracepetermut
 **Ubuntu and Debian**
 
 ```
-sudo apt remove pookie-clip
+sudo apt remove pookieclip
+```
+
+To also remove the apt repository:
+
+```
+sudo rm /etc/apt/sources.list.d/pookieclip.list /usr/share/keyrings/pookieclip.gpg
 ```
 
 **Fedora**
@@ -121,9 +139,20 @@ PookieClip is a [Tauri 2](https://tauri.app) app with a plain HTML, CSS and Java
 
    The packages are written to `src-tauri/target/release/bundle/`.
 
+## Releasing
+
+Bump `version` in `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`, commit, then push a matching tag:
+
+```
+git tag v0.1.2 && git push origin v0.1.2
+```
+
+The Release workflow builds the `.deb` and `.rpm`, attaches them to the GitHub release and publishes the signed apt repository on GitHub Pages.
+
 ## Project layout
 
 ```
+.github/           Release workflow
 gnome-extension/   GNOME Shell extension: clipboard watcher, top bar icon, shortcut
 src-tauri/         Rust backend: history database, saved file copies, clipboard writer
 ui/                The panel, a single HTML file

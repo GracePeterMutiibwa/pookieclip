@@ -73,8 +73,10 @@ struct ClipBus {
 #[interface(name = "io.github.gracepetermutiibwa.PookieClip")]
 impl ClipBus {
     fn add_clip(&self, mime_type: String, source_app: String, data: Vec<u8>) {
-        // Images come in their own step, text and file lists for now
         if mime_type.starts_with("image/") {
+            if !data.is_empty() {
+                file_store::store_image(self.app.clone(), mime_type, source_app, data);
+            }
             return;
         }
 

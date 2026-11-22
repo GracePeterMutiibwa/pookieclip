@@ -16,6 +16,9 @@ use crate::store::Store;
 // All stored copies share this budget, the oldest unpinned ones are dropped first
 const MAX_STORED_BYTES: i64 = 10 * 1024 * 1024 * 1024;
 
+// Copied images, kept as files/<hash>/image.<extension>
+const IMAGE_TYPES: [(&str, &str); 3] = [("image/png", "png"), ("image/jpeg", "jpg"), ("image/webp", "webp")];
+
 // Huge folders are cut off in the panel so the tree stays quick to show
 const MAX_TREE_NODES: usize = 5000;
 
@@ -242,6 +245,71 @@ pub fn store_copies(app: AppHandle, clip_id: i64, uris: String) {
             Err(error) => log::error!("could not record stored copies: {error}"),
         }
     });
+}
+
+fn hex(digest: &[u8]) -> String {
+    digest.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+// Saves a copied image as PookieClip's own file and records it as an entry. Images are named
+// by their content, so copying the same image again, or PookieClip's own re-copy, is one entry.
+pub fn store_image(app: AppHandle, mime_type: String, source_app: String, data: Vec<u8>) {
+    let Some(&(_, extension)) = IMAGE_TYPES.iter().find(|(known, _)| *known == mime_type) else {
+        return;
+    };
+    std::thread::spawn(move || {
+        let file_store = app.state::<FileStore>();
+        let _guard = file_store.busy.lock().unwrap();
+        let store = app.state::<Store>();
+
+        let key = hex(&Sha256::digest(&data));
+        let size = data.len() as i64;
+        let final_dir = file_store.dir.join(&key);
+        let path = final_dir.join(format!("image.{extension}"));
+
+        if !path.exists() {
+            if let Err(error) = store.make_room(MAX_STORED_BYTES - size) {
+                log::error!("could not make room for an image: {error}");
+                return;
+            }
+            remove_unreferenced(&app, &file_store.dir, false);
+            if let Err(error) = write_new_dir(&file_store.dir, &final_dir, &path, &data) {
+                log::error!("could not save an image: {error}");
+                return;
+            }
+        }
+
+        let content = format!("{key}.{extension}");
+        let saved = store
+            .add(&mime_type, &content, &source_app)
+            .and_then(|clip| store.set_stored(clip.id, &uris_from_paths(&[path]), size));
+        match saved {
+            Ok(Some(clip)) => {
+                let _ = app.emit("clip-added", clip);
+            }
+            Ok(None) => {}
+            Err(error) => log::error!("could not record an image: {error}"),
+        }
+    });
+}
+
+// Writes into a staging folder first, so a half written image never sits under its final name
+fn write_new_dir(files_dir: &Path, final_dir: &Path, path: &Path, data: &[u8]) -> std::io::Result<()> {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or(0);
+    let staging = files_dir.join(format!("{STAGING_PREFIX}{stamp}"));
+    fs::create_dir_all(&staging)?;
+    let name = path.file_name().unwrap_or_default();
+    if let Err(error) = fs::write(staging.join(name), data) {
+        let _ = fs::remove_dir_all(&staging);
+        return Err(error);
+    }
+    if final_dir.exists() {
+        fs::remove_dir_all(final_dir)?;
+    }
+    fs::rename(&staging, final_dir)
 }
 
 // How many more nodes the tree may hold, and whether anything was left out

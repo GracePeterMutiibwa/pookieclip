@@ -504,12 +504,15 @@
         font-size: 0.8125rem;
       }
 
+      /* Fills the space above the buttons and shows the whole image */
       .imageFrame {
         width: 100%;
-        aspect-ratio: 16 / 10;
+        flex: 1;
+        min-height: 10rem;
         border-radius: 0.75rem;
         border: 1px solid rgba(255, 255, 255, 0.18);
-        background-size: cover;
+        background-size: contain;
+        background-repeat: no-repeat;
         background-position: center;
       }
 
@@ -630,9 +633,7 @@
         font-size: 0.75rem;
         font-weight: 500;
         cursor: pointer;
-        transition:
-          background 0.16s var(--ease),
-          color 0.16s var(--ease);
+        transition: background 0.16s var(--ease), color 0.16s var(--ease);
       }
 
       .textBtn:hover {
@@ -677,9 +678,7 @@
         height: 0.875rem;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.85);
-        transition:
-          transform 0.24s var(--ease),
-          background 0.2s var(--ease);
+        transition: transform 0.24s var(--ease), background 0.2s var(--ease);
       }
 
       .switch[aria-checked="true"] {
@@ -766,9 +765,7 @@
         font-size: 0.9375rem;
         cursor: pointer;
         opacity: 0;
-        transition:
-          opacity 0.16s var(--ease),
-          background 0.16s var(--ease);
+        transition: opacity 0.16s var(--ease), background 0.16s var(--ease);
       }
 
       .treeRow:hover .treeCopy,
@@ -795,9 +792,7 @@
         border: 1.5px solid rgba(255, 255, 255, 0.35);
         color: #1c1c1f;
         font-size: 0.75rem;
-        transition:
-          background 0.16s var(--ease),
-          border-color 0.16s var(--ease);
+        transition: background 0.16s var(--ease), border-color 0.16s var(--ease);
       }
 
       .isSelecting .checkBox {
@@ -1513,28 +1508,13 @@
         </span>
         <span class="footerEnd">
           <span class="footerActions">
-            <button
-              class="aboutBtn"
-              id="clearBtn"
-              type="button"
-              aria-label="Clear history"
-            >
+            <button class="aboutBtn" id="clearBtn" type="button" aria-label="Clear history">
               <span data-icon="trash"></span><span>Clear</span>
             </button>
-            <button
-              class="aboutBtn"
-              id="aboutBtn"
-              type="button"
-              aria-label="About"
-            >
+            <button class="aboutBtn" id="aboutBtn" type="button" aria-label="About">
               <span data-icon="info"></span><span>About</span>
             </button>
-            <button
-              class="aboutBtn"
-              id="quitBtn"
-              type="button"
-              aria-label="Quit PookieClip"
-            >
+            <button class="aboutBtn" id="quitBtn" type="button" aria-label="Quit PookieClip">
               <span data-icon="quit"></span><span>Quit</span>
             </button>
           </span>
@@ -2094,7 +2074,8 @@
         let detail = typeMeta[item.type].label;
         if (item.type === "link") detail = hostOf(item.content);
         if (item.type === "code") detail = item.lang || "Code";
-        if (item.type === "image") detail = `${item.width} × ${item.height}`;
+        if (item.type === "image")
+          detail = item.width ? `${item.width} × ${item.height}` : item.format;
         if (item.type === "file" || item.type === "folder")
           detail =
             item.paths && item.paths.length > 1
@@ -2313,7 +2294,8 @@
           return `<div class="swatchLarge" style="background:${escapeHtml(item.content)}"></div><div class="valueList">${rows}</div>`;
         }
         if (item.type === "image") {
-          return `<div class="imageFrame" style="background-image:${item.art}"></div><div class="previewStats">${escapeHtml(item.label)}, ${item.width} × ${item.height}, ${item.format}, ${item.size}</div>`;
+          const dimensions = item.width ? `, ${item.width} × ${item.height}` : "";
+          return `<div class="imageFrame" style="background-image:${item.art}"></div><div class="previewStats">${escapeHtml(item.label)}${dimensions}, ${item.format}, ${item.size}</div>`;
         }
         if (item.type === "file") return fileTreeHtml(item);
         const icon = item.missing ? "warning" : typeMeta[item.type].icon;
@@ -2427,17 +2409,9 @@
             const open = node.isDir && state.tree.expanded.has(node.path);
             const nodeState = treeCheckState(node);
             const checkClass =
-              nodeState === "all"
-                ? "isChecked"
-                : nodeState === "some"
-                  ? "isPartial"
-                  : "";
+              nodeState === "all" ? "isChecked" : nodeState === "some" ? "isPartial" : "";
             const ariaChecked =
-              nodeState === "all"
-                ? "true"
-                : nodeState === "some"
-                  ? "mixed"
-                  : "false";
+              nodeState === "all" ? "true" : nodeState === "some" ? "mixed" : "false";
             const count = node.isDir ? treeFileCount(node.children) : 0;
             const meta = node.isDir
               ? `${count} ${count === 1 ? "file" : "files"}`
@@ -2494,15 +2468,10 @@
       }
 
       function fileActionsHtml(item) {
-        if (
-          state.tree.id === item.id &&
-          state.tree.selecting &&
-          state.tree.data
-        ) {
+        if (state.tree.id === item.id && state.tree.selecting && state.tree.data) {
           const count = treeSelection(item).length;
           const allChecked =
-            treeCheckState({ isDir: true, children: state.tree.data.roots }) ===
-            "all";
+            treeCheckState({ isDir: true, children: state.tree.data.roots }) === "all";
           return `<button class="btn btnPrimary" type="button" data-tree-action="copySelected" ${count ? "" : "disabled"}>${iconSvg("copy")}<span>${count ? `Copy ${count} selected` : "Copy selected"}</span></button>
         <button class="btn btnSecondary" type="button" data-tree-action="selectAll">${allChecked ? "Clear selection" : "Select all"}</button>`;
         }
@@ -2566,8 +2535,7 @@
         if (state.tree.selecting && !onChevron) {
           toggleTreeCheck(node);
         } else if (node.isDir) {
-          if (state.tree.expanded.has(node.path))
-            state.tree.expanded.delete(node.path);
+          if (state.tree.expanded.has(node.path)) state.tree.expanded.delete(node.path);
           else state.tree.expanded.add(node.path);
         }
         render();
@@ -2679,11 +2647,7 @@
           return;
         }
 
-        if (
-          item.type === "file" &&
-          state.tree.id === item.id &&
-          state.tree.selecting
-        ) {
+        if (item.type === "file" && state.tree.id === item.id && state.tree.selecting) {
           const selection = treeSelection(item);
           if (selection.length) copyPaths(selection.map((node) => node.path));
           return;
@@ -2890,9 +2854,7 @@
       clearBtn.addEventListener("click", openConfirm);
       document
         .getElementById("quitBtn")
-        .addEventListener("click", () =>
-          window.__TAURI__.core.invoke("quit_app"),
-        );
+        .addEventListener("click", () => window.__TAURI__.core.invoke("quit_app"));
       confirmCancel.addEventListener("click", closeConfirm);
       confirmClear.addEventListener("click", clearHistory);
 
@@ -3008,6 +2970,17 @@
       }
 
       // Turns a saved clip from the database into an item the panel can show
+      // Reads an image's width and height once it loads, then shows them
+      function measureImage(item) {
+        const image = new Image();
+        image.addEventListener("load", () => {
+          item.width = image.naturalWidth;
+          item.height = image.naturalHeight;
+          render();
+        });
+        image.src = item.src;
+      }
+
       function toItem(clip) {
         const base = {
           id: clip.id,
@@ -3017,6 +2990,25 @@
           time: clip.copiedAt,
           clip,
         };
+        // Images are shown from PookieClip's own saved copy
+        if (clip.mimeType.startsWith("image/")) {
+          const path = decodeURIComponent((clip.stored || "").trim().slice(7));
+          const src = window.__TAURI__.core.convertFileSrc(path);
+          const item = Object.assign(base, {
+            type: "image",
+            content: "",
+            label: "Image",
+            format: clip.mimeType.slice(6).toUpperCase(),
+            size: formatSize(clip.storedBytes),
+            src,
+            art: `url('${src}')`,
+            width: 0,
+            height: 0,
+          });
+          measureImage(item);
+          return item;
+        }
+
         const text = clip.content.trim();
         if (clip.mimeType === "text/uri-list") {
           const lines = text
